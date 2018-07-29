@@ -7,25 +7,23 @@ var vertexShaderSource =
     "#version 300 es",
 
     "in vec3 inputPosition;",
+    "in vec2 inputTexCoord;",
     "in vec3 inputNormal;",
-
-    "uniform vec4 inputColor;",
-
-    //"uniform vec2 inputTexCoord;"
-
+    
     "uniform mat4 modelview, normalMat, modelviewProjection;",
-
+    "uniform vec4 inputColor;",
+    
     "smooth out vec3 normalInterp;",
     "smooth out vec3 vertPos;",
     "out vec4 vertColor;",
-
-    "void main() {",
-    "	gl_Position = modelviewProjection * vec4(inputPosition, 1.0);",
-    "	vec4 vertPos4 = modelview * vec4(inputPosition, 1.0);",
-    "	vertPos = vertPos4.xyz / vertPos4.w;",
-    "	normalInterp = normalize(vec3(normalMat) * inputNormal);",
-    "	vertColor = inputColor;",
-    "}"
+    
+    "void main(){",
+        "gl_Position = modelviewProjection * vec4(inputPosition, 1.0);",
+        "vec4 vertPos4 = modelviewProjection * vec4(inputPosition, 1.0);",
+        "vertPos = vertPos4.xyz / vertPos4.w;",
+        "normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));",
+        "vertColor = inputColor;",
+    "}"    
 ].join('\n');
 
 var fragmentShaderSource =
@@ -33,47 +31,54 @@ var fragmentShaderSource =
     "#version 300 es",
 
     "precision mediump float;",
-    
+
     "smooth in vec3 normalInterp;",
     "smooth in vec3 vertPos;",
     "in vec4 vertColor;",
-    
-    "const vec3 lightPos = vec3(0.5, 0.5, 0.5);",
+
+    "uniform float emission;",
+
+    "const float lightPower = 8.0;",
     "const vec3 lightColor = vec3(1.0, 1.0, 1.0);",
-    "const float lightPower = 41.0;",
-    "const vec3 ambientColor = vec3(0.1, 0.0, 0.0);",
-    "const vec3 diffuseColor = vec3(0.5, 0.0, 0.0);",
+    "const vec3 lightPos = vec3(0.0, 0.0, 0.0);",
+    "const vec3 ambientColor = vec3(0.1, 0.1, 0.1);",
+    "const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);",
     "const vec3 specColor = vec3(1.0, 1.0, 1.0);",
-    "const float shininess = 16.0;",
+    "const float shininess = 128.0;",
     "const float screenGamma = 2.2;",
-    
+
     "out vec4 fragColor;",
-    
+
     "void main() {",
-    "	vec3 normal = normalize(normalInterp);",
-    "	vec3 lightDir = lightPos - vertPos;",
-    "	float distance = length(lightDir);",
-    "	distance = distance * distance;",
-    "	lightDir = normalize(lightDir);",
-    
-    "	float lambertian = max(dot(normal, lightDir), 0.0);",
-    "	float specular = 0.0;",
-    
-    "	if (lambertian > 0.0) {",
-    "		vec3 viewDir = normalize(-vertPos);",
-    "		vec3 halfDir = normalize(lightDir + viewDir);",
-    "		float specAngle = max(dot(normal, halfDir), 0.0);",
-    "		specular = pow(specAngle, shininess);",
-    "	}",
-    
-    "	vec3 colorLinear = ambientColor +",
-    "		diffuseColor * lambertian * lightColor * lightPower / distance +",
-    "		specColor * specular * lightColor * lightPower / distance;",
-    
-    "	vec3 colorGammaCorrected = pow(colorLinear, vec3(1.0 / screenGamma));",
-    
-    "	fragColor = vec4(colorLinear, 1.0);",
-    //"	fragColor = vertColor;",
+
+        "vec3 normal = normalize(normalInterp);",
+        "vec3 lightDir = normalize(lightPos - vertPos);",
+        "float distance = length(lightDir);",
+
+        "float lambertian = max(dot(lightDir, normal), 0.0);",
+        "float specular = 0.0;",
+
+        "if(lambertian > 0.0) {",
+            "vec3 viewDir = normalize(-vertPos);",
+
+            "vec3 halfDir = normalize(lightDir + viewDir);",
+            "float specAngle = max(dot(halfDir, normal), 0.0);",
+            "specular = pow(specAngle, shininess);",
+        "}",
+
+        "vec3 colorLinear = ambientColor +",
+                            "lambertian * diffuseColor * lightColor * lightPower / distance +",
+                            "specular * specColor * lightColor * lightPower / distance;",
+
+        //"colorLinear += vec3(vertColor));",
+        
+        "if(emission > 1.0) {",
+            "colorLinear *= emission;",
+        "}",
+
+        "vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));",
+
+        "fragColor = vec4(colorGamma, 1.0);",
     "}"
 ].join('\n');
 
@@ -100,10 +105,12 @@ function loadShaderSource(shaderPath) {
 var vao;
 var ibo;
 
-var projectionPointer;
+//var projectionPointer;
 var modelviewPointer;
 var normalMatPointer;
 var modelviewProjectionPointer;
+
+var emissionPointer;
 
 var inputColorPointer;
 
@@ -115,14 +122,15 @@ var run = function(vertexShaderSource, fragmentShaderSource) {
     loadWebGL();
 
     vao = gl.createVertexArray();
-    gl.clearColor(0.5, 0.5, 0.5, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     shaderProgram = loadShaders(vertexShaderSource, fragmentShaderSource);
 
     modelviewPointer =  gl.getUniformLocation(shaderProgram, "modelView");
     normalMatPointer =  gl.getUniformLocation(shaderProgram, "normalMat");
     modelviewProjectionPointer = gl.getUniformLocation(shaderProgram, "modelviewProjection");
+
+    emissionPointer = gl.getUniformLocation(shaderProgram, "emission");
 
     inputColorPointer = gl.getUniformLocation(shaderProgram, 'inputColor');
 
@@ -143,44 +151,46 @@ var run = function(vertexShaderSource, fragmentShaderSource) {
 var rotate = 0;
 var then = 0;
 function render(now) {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        now *= 1.001;  //convert to seconds
-        const deltaTime = now - then;
-        then = now;
+    now *= 1.001;  //convert to seconds
+    const deltaTime = now - then;
+    then = now;
 
-        requestAnimationFrame(render);
+    requestAnimationFrame(render);
 
-        gl.useProgram(shaderProgram);
+    gl.useProgram(shaderProgram);
 
-        rotate += ROTATION_FACTOR * deltaTime;
+    rotate += ROTATION_FACTOR * deltaTime;
 
-        gl.bindVertexArray(vao);
+    gl.bindVertexArray(vao);
 
-        for (var i = 0; i < MODEL_COUNT; i++) {
-            //console.log("drawing element: " + i);
+    for (var i = 0; i < MODEL_COUNT; i++) {
+        //console.log("drawing element: " + i);
 
-            var mat4model = calcModel(i);
-            var mat4view = calcView();
-            var mat4projection = calcProjection();
-            var mat4modelview = calcModelView(mat4model, mat4view);
-            var mat4modelviewProjection = calcModelViewProjection(mat4modelview, mat4projection);
-            var mat4normal = calcNormal(mat4modelviewProjection);
+        var mat4model = calcModel(i);
+        var mat4view = calcView();
+        var mat4projection = calcProjection();
+        var mat4modelview = calcModelView(mat4model, mat4view);
+        var mat4modelviewProjection = calcModelViewProjection(mat4modelview, mat4projection);
+        var mat4normal = calcNormal(mat4modelview);
 
-            gl.uniformMatrix4fv(modelviewPointer, gl.FALSE, new Float32Array(mat4modelview));
-            gl.uniformMatrix4fv(normalMatPointer, gl.FALSE, new Float32Array(mat4normal));
-            gl.uniformMatrix4fv(modelviewProjectionPointer, gl.FALSE, new Float32Array(mat4modelviewProjection));
+        gl.uniformMatrix4fv(modelviewPointer, gl.FALSE, new Float32Array(mat4modelview));
+        gl.uniformMatrix4fv(normalMatPointer, gl.FALSE, new Float32Array(mat4normal));
+        gl.uniformMatrix4fv(modelviewProjectionPointer, gl.FALSE, new Float32Array(mat4modelviewProjection));
 
-            gl.uniform4fv(inputColorPointer, new Float32Array(vec4MODEL_COLORS[i]));
+        gl.uniform1f(emissionPointer, fMODEL_EMISSIONS[i]);
+
+        gl.uniform4fv(inputColorPointer, new Float32Array(vec4MODEL_COLORS[i]));
             
-            //console.log(mat4normal);
+        //console.log(mat4normal);
 
-            gl.drawElements(gl.TRIANGLE_STRIP, VERTICES_COUNT_OF_SPHERE + 416, gl.UNSIGNED_SHORT, 0); //1440
-        }
+        gl.drawElements(gl.TRIANGLE_STRIP, VERTICES_COUNT_OF_SPHERE + 416, gl.UNSIGNED_SHORT, 0); //1440
+    }
 
-        gl.bindVertexArray(null);
-        //console.log("rendered frame");
-        //optionally swap buffers
+    gl.bindVertexArray(null);
+    //console.log("rendered frame");
+    //optionally swap buffers
 }
 
 function rotateAround(mat4object, scale, vec3origin, vec3pivot, rotationFactor) {
@@ -239,13 +249,9 @@ function calcModelViewProjection(modelView, projection) {
 	return m4.multiply(projection, modelView);
 }
 
-function calcNormal(mvp) {
+function calcNormal(modelView) {
     //return inverse(transpose(mat3(modelviewProjection)));
-    var mat3normal = [  mvp[0], mvp[1], mvp[2],
-                        mvp[4], mvp[5], mvp[6],
-                        mvp[8], mvp[9], mvp[10]]
-
-    return m4.inverse(m4.transpose(getMat4FromMat3(mat3normal)));
+    return m4.transpose(m4.inverse(modelView));
 }
 
 function getIdentityMat4() {
@@ -726,11 +732,11 @@ function drawSphere(radius) {
 }
 
 //var GLOBAL_TRANSLATION = [-150, 0, -360];
-var GLOBAL_TRANSLATION = [0, 0, 0];
+var GLOBAL_TRANSLATION = [0.0, 0.0, 0.0];
 
 var OBJECT_SCALE = 1.0;
 //var SPACE_SCALE = 1.0;
-var ROTATION_FACTOR = 0.05;
+var ROTATION_FACTOR = 0.04;
 
 var MODEL_COUNT = 4;
 var SUN_INDEX = 0;
@@ -748,10 +754,15 @@ var EARTH_SCALE = 0.2;
 var PLANETX_SCALE = 0.15;
 var MOON_SCALE = 0.05;
 
-var vec4SUN_COLOR = [1.0, 1.0, 0.0, 1.0];
-var vec4EARTH_COLOR = [0.0, 0.75, 0.0, 1.0];
-var vec4PLANETX_COLOR = [0.75, 0.0, 0.0, 1.0];
-var vec4MOON_COLOR = [0.75, 0.75, 0.75, 1.0];
+var SUN_EMISSION = 3.0;
+var EARTH_EMISSION = 0.0;
+var PLANETX_EMISSION = 0.0;
+var MOON_EMISSION = 0.0;
+
+var vec4SUN_COLOR = [0.5, 0.5, 0.0, 1.0];
+var vec4EARTH_COLOR = [0.0, 0.1, 0.0, 1.0];
+var vec4PLANETX_COLOR = [0.1, 0.0, 0.0, 1.0];
+var vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
 
 var vec3MODEL_POSITIONS = [ vec3SUN_POSITION,
                             vec3EARTH_POSITION,
@@ -762,6 +773,11 @@ var fMODEL_SCALES = [   SUN_SCALE,
                         EARTH_SCALE,
                         PLANETX_SCALE,
                         MOON_SCALE];
+
+var fMODEL_EMISSIONS = [SUN_EMISSION,
+                        EARTH_EMISSION,
+                        PLANETX_EMISSION,
+                        MOON_EMISSION];
 
 var vec4MODEL_COLORS = [vec4SUN_COLOR,
                         vec4EARTH_COLOR,
@@ -776,8 +792,6 @@ var cameraMatrix;
 var fieldOfViewRadians = toRadians(60);
 
 function setUpCamera() {
-    var numFs = 5;
-    var radius = 200;
     var cameraAngleRadians = toRadians(0);
      
     // Compute a matrix for the camera
