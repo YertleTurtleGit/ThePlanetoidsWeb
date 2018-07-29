@@ -1,85 +1,92 @@
-"use strict";
+'use strict';
 
 var gl;
 
 var vertexShaderSource =
 [
-    "#version 300 es",
+    '#version 300 es',
 
-    "in vec3 inputPosition;",
-    "in vec2 inputTexCoord;",
-    "in vec3 inputNormal;",
+    'in vec3 inputPosition;',
+    'in vec2 inputTexCoord;',
+    'in vec3 inputNormal;',
     
-    "uniform mat4 modelview, normalMat, modelviewProjection;",
-    "uniform vec4 inputColor;",
+    'uniform mat4 modelview, normalMat, modelviewProjection;',
+    'uniform vec4 inputColor;',
+
+    'uniform float rand;',
     
-    "smooth out vec3 normalInterp;",
-    "smooth out vec3 vertPos;",
-    "out vec4 vertColor;",
-    
-    "void main(){",
-        "gl_Position = modelviewProjection * vec4(inputPosition, 1.0);",
-        "vec4 vertPos4 = modelviewProjection * vec4(inputPosition, 1.0);",
-        "vertPos = vertPos4.xyz / vertPos4.w;",
-        "normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));",
-        "vertColor = inputColor;",
-    "}"    
+    'smooth out vec3 normalInterp;',
+    'smooth out vec3 vertPos;',
+    'out vec4 vertColor;',
+
+    'out vec2 uv;',
+
+    'void main(){',
+        'gl_Position = modelviewProjection * vec4(inputPosition, 1.0);',
+        'vec4 vertPos4 = modelviewProjection * vec4(inputPosition, 1.0);',
+        'vertPos = vertPos4.xyz / vertPos4.w;',
+        'normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));',
+        'vertColor = inputColor;',
+    '}'    
 ].join('\n');
 
 var fragmentShaderSource =
 [
-    "#version 300 es",
+    '#version 300 es',
 
-    "precision mediump float;",
+    'precision mediump float;',
 
-    "smooth in vec3 normalInterp;",
-    "smooth in vec3 vertPos;",
-    "in vec4 vertColor;",
+    'smooth in vec3 normalInterp;',
+    'smooth in vec3 vertPos;',
+    'in vec4 vertColor;',
 
-    "uniform float emission;",
+    'uniform bool bloom;',
 
-    "const float lightPower = 8.0;",
-    "const vec3 lightColor = vec3(1.0, 1.0, 1.0);",
-    "const vec3 lightPos = vec3(0.0, 0.0, 0.0);",
-    "const vec3 ambientColor = vec3(0.1, 0.1, 0.1);",
-    "const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);",
-    "const vec3 specColor = vec3(1.0, 1.0, 1.0);",
-    "const float shininess = 128.0;",
-    "const float screenGamma = 2.2;",
+    'const float lightPower = 8.0;',
+    'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
+    'const vec3 lightPos = vec3(0.0, 0.0, 0.0);',
+    'const vec3 ambientColor = vec3(0.1, 0.1, 0.1);',
+    'const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);',
+    'const vec3 specColor = vec3(1.0, 1.0, 1.0);',
+    'const float shininess = 128.0;',
+    'const float screenGamma = 2.2;',
 
-    "out vec4 fragColor;",
+    'out vec4 fragColor;',
 
-    "void main() {",
+    'void main() {',
 
-        "vec3 normal = normalize(normalInterp);",
-        "vec3 lightDir = normalize(lightPos - vertPos);",
-        "float distance = length(lightDir);",
+        'vec3 normal = normalize(normalInterp);',
+        'vec3 lightDir = normalize(lightPos - vertPos);',
+        'float distance = length(lightDir);',
 
-        "float lambertian = max(dot(lightDir, normal), 0.0);",
-        "float specular = 0.0;",
+        'float lambertian = max(dot(lightDir, normal), 0.0);',
+        'float specular = 0.0;',
 
-        "if(lambertian > 0.0) {",
-            "vec3 viewDir = normalize(-vertPos);",
+        'if(lambertian > 0.0) {',
+            'vec3 viewDir = normalize(-vertPos);',
 
-            "vec3 halfDir = normalize(lightDir + viewDir);",
-            "float specAngle = max(dot(halfDir, normal), 0.0);",
-            "specular = pow(specAngle, shininess);",
-        "}",
+            'vec3 halfDir = normalize(lightDir + viewDir);',
+            'float specAngle = max(dot(halfDir, normal), 0.0);',
+            'specular = pow(specAngle, shininess);',
+        '}',
 
-        "vec3 colorLinear = ambientColor +",
-                            "lambertian * diffuseColor * lightColor * lightPower / distance +",
-                            "specular * specColor * lightColor * lightPower / distance;",
+        'vec3 colorLinear = ambientColor +',
+                            'lambertian * diffuseColor * lightColor * lightPower / distance +',
+                            'specular * specColor * lightColor * lightPower / distance;',
 
-        //"colorLinear += vec3(vertColor));",
-        
-        "if(emission > 1.0) {",
-            "colorLinear *= emission;",
-        "}",
+        'colorLinear -= lightColor * lightPower * distance * 0.0245;',
+        'colorLinear += mix(colorLinear, vertColor.rgb, 0.9);',
 
-        "vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));",
+        'float alpha = 1.0;',
 
-        "fragColor = vec4(colorGamma, 1.0);",
-    "}"
+        'if(bloom) {',
+            
+        '}',
+
+        'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
+
+        'fragColor = vec4(colorGamma, alpha);',     
+    '}'
 ].join('\n');
 
 var shaderProgram;
@@ -110,12 +117,14 @@ var modelviewPointer;
 var normalMatPointer;
 var modelviewProjectionPointer;
 
-var emissionPointer;
+var bloomPointer;
+var randPointer;
 
 var inputColorPointer;
 
 var inputPositionLocation;
 var inputNormalLocation;
+//var inputTextureLocation;
 
 var run = function(vertexShaderSource, fragmentShaderSource) {
 
@@ -126,16 +135,18 @@ var run = function(vertexShaderSource, fragmentShaderSource) {
 
     shaderProgram = loadShaders(vertexShaderSource, fragmentShaderSource);
 
-    modelviewPointer =  gl.getUniformLocation(shaderProgram, "modelView");
-    normalMatPointer =  gl.getUniformLocation(shaderProgram, "normalMat");
-    modelviewProjectionPointer = gl.getUniformLocation(shaderProgram, "modelviewProjection");
+    modelviewPointer =  gl.getUniformLocation(shaderProgram, 'modelView');
+    normalMatPointer =  gl.getUniformLocation(shaderProgram, 'normalMat');
+    modelviewProjectionPointer = gl.getUniformLocation(shaderProgram, 'modelviewProjection');
 
-    emissionPointer = gl.getUniformLocation(shaderProgram, "emission");
+    bloomPointer = gl.getUniformLocation(shaderProgram, 'bloom');
+    randPointer = gl.getUniformLocation(shaderProgram, 'rand');
 
     inputColorPointer = gl.getUniformLocation(shaderProgram, 'inputColor');
 
     inputPositionLocation = gl.getAttribLocation(shaderProgram, 'inputPosition');
     inputNormalLocation = gl.getAttribLocation(shaderProgram, 'inputNormal');
+    //inputTextureLocation = gl.getAttribLocation(shaderProgram, 'inputTexCoord')
 
     gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LESS);
@@ -166,7 +177,9 @@ function render(now) {
     gl.bindVertexArray(vao);
 
     for (var i = 0; i < MODEL_COUNT; i++) {
-        //console.log("drawing element: " + i);
+        //console.log('drawing element: ' + i);
+
+        var rand = Math.random();
 
         var mat4model = calcModel(i);
         var mat4view = calcView();
@@ -179,9 +192,15 @@ function render(now) {
         gl.uniformMatrix4fv(normalMatPointer, gl.FALSE, new Float32Array(mat4normal));
         gl.uniformMatrix4fv(modelviewProjectionPointer, gl.FALSE, new Float32Array(mat4modelviewProjection));
 
-        gl.uniform1f(emissionPointer, fMODEL_EMISSIONS[i]);
-
         gl.uniform4fv(inputColorPointer, new Float32Array(vec4MODEL_COLORS[i]));
+
+        gl.uniform1f(randPointer, rand);
+
+        if(i == SUN_INDEX) {
+            gl.uniform1i(bloomPointer, 1);
+        } else {
+            gl.uniform1i(bloomPointer, 0);
+        }
             
         //console.log(mat4normal);
 
@@ -189,7 +208,7 @@ function render(now) {
     }
 
     gl.bindVertexArray(null);
-    //console.log("rendered frame");
+    //console.log('rendered frame');
     //optionally swap buffers
 }
 
@@ -726,7 +745,14 @@ function drawSphere(radius) {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
     gl.vertexAttribPointer(inputNormalLocation, 3, gl.FLOAT, gl.FALSE, 3 * FLOAT_SIZE, 0);
     gl.enableVertexAttribArray(inputNormalLocation);
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    
+    /*var vboT = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vboT);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(inputTextureLocation, 2, gl.FLOAT, gl.FALSE, 2 * FLOAT_SIZE, 0);
+    gl.enableVertexAttribArray(inputTextureLocation);
+	gl.bindBuffer(gl.ARRAY_BUFFER, null);*/
 
     gl.bindVertexArray(null);
 }
@@ -751,15 +777,10 @@ var vec3MOON_POSITION = vec3add([2.25, 0.0, 0.0], GLOBAL_TRANSLATION);
 
 var SUN_SCALE = 1.5;
 var EARTH_SCALE = 0.2;
-var PLANETX_SCALE = 0.15;
+var PLANETX_SCALE = 0.125;
 var MOON_SCALE = 0.05;
 
-var SUN_EMISSION = 3.0;
-var EARTH_EMISSION = 0.0;
-var PLANETX_EMISSION = 0.0;
-var MOON_EMISSION = 0.0;
-
-var vec4SUN_COLOR = [0.5, 0.5, 0.0, 1.0];
+var vec4SUN_COLOR = [1.0, 1.0, 1.0, 1.0];
 var vec4EARTH_COLOR = [0.0, 0.1, 0.0, 1.0];
 var vec4PLANETX_COLOR = [0.1, 0.0, 0.0, 1.0];
 var vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
@@ -773,11 +794,6 @@ var fMODEL_SCALES = [   SUN_SCALE,
                         EARTH_SCALE,
                         PLANETX_SCALE,
                         MOON_SCALE];
-
-var fMODEL_EMISSIONS = [SUN_EMISSION,
-                        EARTH_EMISSION,
-                        PLANETX_EMISSION,
-                        MOON_EMISSION];
 
 var vec4MODEL_COLORS = [vec4SUN_COLOR,
                         vec4EARTH_COLOR,
