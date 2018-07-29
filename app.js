@@ -304,7 +304,7 @@ function loadWebGL() {
         console.error('No webgl2-context found!');
         return;
     }
-    //fitCanvasInWindow(canvas, gl);
+    fitCanvasInWindow(canvas, gl);
     //webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 }
 
@@ -599,12 +599,23 @@ var m4 = {
   };
 
 function fitCanvasInWindow(canvas) {
-    var windowWidth = window.innerWidth;
-    var windowHeight = window.innerHieght;
+    var realToCSSPixels = window.devicePixelRatio;
 
-    canvas.width = windowWidth;
-    canvas.width = windowHeight;
-    gl.viewport(0, 0, windowWidth, windowHeight);
+    // Lookup the size the browser is displaying the canvas in CSS pixels
+    // and compute a size needed to make our drawingbuffer match it in
+    // device pixels.
+    var displayWidth  = Math.floor(gl.canvas.clientWidth  * realToCSSPixels);
+    var displayHeight = Math.floor(gl.canvas.clientHeight * realToCSSPixels);
+       
+    // Check if the canvas is not the same size.
+    if (canvas.width  != displayWidth ||
+        canvas.height != displayHeight) {
+    
+        // Make the canvas the same size
+        canvas.width  = displayWidth;
+        canvas.height = displayHeight;
+    }
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 }
 
 function loadShaders(vertexShaderSource, fragmentShaderSource) {
