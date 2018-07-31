@@ -27,6 +27,7 @@ var vertexShaderSource =
         'vertPos = vertPos4.xyz / vertPos4.w;',
         'normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));',
         'vertColor = inputColor;',
+        'uv = inputTexCoord;',
     '}'    
 ].join('\n');
 
@@ -36,11 +37,15 @@ var fragmentShaderSource =
 
     'precision mediump float;',
 
-    'smooth in vec3 normalInterp;',
     'smooth in vec3 vertPos;',
+    'smooth in vec3 normalInterp;',
     'in vec4 vertColor;',
 
+    'in vec2 uv;',
+    'uniform bool buffer;',
     'uniform bool bloom;',
+
+    'uniform sampler2D frameBufferTextureSampler;',
 
     'const float lightPower = 8.0;',
     'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
@@ -79,25 +84,70 @@ var fragmentShaderSource =
 
         'float alpha = 1.0;',
 
-        'if(bloom) {',
-            
-        '}',
-
         'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
+
+        //'if(buffer) {',
+            //'if(bloom) {',
+                //'colorGamma = vec3(1.0, 0.0, 0.0);',
+            //'}',
+        //'} else {',
+            //'colorGamma = texture(frameBufferTextureSampler, uv).rgb;',
+        //'}',
 
         'fragColor = vec4(colorGamma, alpha);',     
     '}'
 ].join('\n');
 
+var frameVertexShaderSource =
+[
+    '#version 300 es',
+
+    'in vec2 inputPosition;',
+    'in vec2 inputTexCoord;',
+
+    'uniform mat3 frameMat;',
+    
+    'smooth out vec2 vertPos;',
+
+    'out vec2 uv;',
+
+    'void main(){',
+        'gl_Position = vec4(inputPosition, 0.0, 1.0);',
+        'vertPos = inputPosition;',
+        'uv = inputTexCoord;',
+    '}'    
+].join('\n');
+
+var frameFragmentShaderSource =
+[
+    '#version 300 es',
+
+    'precision mediump float;',
+
+    'in vec2 uv;',
+    //'uniform bool buffer;',
+    //'uniform bool bloom;',
+
+    'uniform sampler2D frameBufferTextureSampler;',
+
+    'out vec4 fragColor;',
+
+    'void main() {',
+        'fragColor = texture(frameBufferTextureSampler, uv);',
+        'fragColor.a = 1.0;', 
+        //'fragColor = vec4(1.0, 0.0, 0.0, 1.0);',    
+    '}'
+].join('\n');
+
 var shaderProgram;
+var frameShaderProgram;
 
 var init = function() {
     //var vertexShaderSource = loadShaderSource(VERTEX_SHADER_PATH);
     //var fragmentShaderSource = loadShaderSource(FRAGMENT_SHADER_PATH);
 
-    if(vertexShaderSource != null && fragmentShaderSource != null) {
-        run(vertexShaderSource, fragmentShaderSource);
-    }
+    run();
+
 };
 
 function loadShaderSource(shaderPath) {
@@ -117,16 +167,25 @@ var modelviewPointer;
 var normalMatPointer;
 var modelviewProjectionPointer;
 
+var frameBufferTexturePointer;
+
 var bloomPointer;
+var bufferPointer;
+
 var randPointer;
 
 var inputColorPointer;
 
 var inputPositionLocation;
 var inputNormalLocation;
-//var inputTextureLocation;
+var inputTextureLocation;
+var frameBufferTextureSamplerPointer;
 
-var run = function(vertexShaderSource, fragmentShaderSource) {
+var frameMatPointer;
+var frameInputPositionLocation;
+var frameInputTextureLocation;
+
+var run = function() {
 
     loadWebGL();
 
@@ -134,52 +193,80 @@ var run = function(vertexShaderSource, fragmentShaderSource) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     shaderProgram = loadShaders(vertexShaderSource, fragmentShaderSource);
+    frameShaderProgram = loadShaders(frameVertexShaderSource, frameFragmentShaderSource);
 
     modelviewPointer =  gl.getUniformLocation(shaderProgram, 'modelView');
     normalMatPointer =  gl.getUniformLocation(shaderProgram, 'normalMat');
     modelviewProjectionPointer = gl.getUniformLocation(shaderProgram, 'modelviewProjection');
 
+    frameBufferTexturePointer = gl.getUniformLocation(shaderProgram, 'frameBufferTexture');
+
     bloomPointer = gl.getUniformLocation(shaderProgram, 'bloom');
+    bufferPointer = gl.getUniformLocation(shaderProgram, 'buffer');
+
     randPointer = gl.getUniformLocation(shaderProgram, 'rand');
 
     inputColorPointer = gl.getUniformLocation(shaderProgram, 'inputColor');
 
     inputPositionLocation = gl.getAttribLocation(shaderProgram, 'inputPosition');
     inputNormalLocation = gl.getAttribLocation(shaderProgram, 'inputNormal');
-    //inputTextureLocation = gl.getAttribLocation(shaderProgram, 'inputTexCoord')
+    inputTextureLocation = gl.getAttribLocation(shaderProgram, 'inputTexCoord');
+
+    //bufferTextureSamplerPointer = gl.getUniformLocation(shaderProgram, 'frameBufferTextureSampler');
+
+    frameMatPointer = gl.getUniformLocation(frameShaderProgram, 'frameMat');
+    frameInputPositionLocation = gl.getAttribLocation(frameShaderProgram, 'inputPosition');
+    frameInputTextureLocation = gl.getAttribLocation(frameShaderProgram, 'inputTexCoord');
+    frameBufferTextureSamplerPointer = gl.getUniformLocation(frameShaderProgram, 'frameBufferTextureSampler');
 
     gl.enable(gl.DEPTH_TEST);
-	gl.depthFunc(gl.LESS);
+    gl.depthFunc(gl.LESS);
 
     setUpCamera();
     drawPlanets();
+
+    setUpRenderTexture();
+    prepareFrame();
 
     render(0);
 
     console.log('End of run method reached.');
 };
 
+//var renderInBuffer = true;
+
 var rotate = 0;
 var then = 0;
+
 function render(now) {
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     now *= 1.001;  //convert to seconds
     const deltaTime = now - then;
     then = now;
 
-    requestAnimationFrame(render);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+    renderGeometry();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-    gl.useProgram(shaderProgram);
+    renderFrame(frameBufferTexture);
 
     rotate += ROTATION_FACTOR * deltaTime;
+
+    requestAnimationFrame(render);
+}
+
+function renderGeometry() {
+    gl.useProgram(shaderProgram);
+    //gl.uniform1i(frameBufferTextureSamplerPointer, 0);
+
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    var rand = Math.random();
 
     gl.bindVertexArray(vao);
 
     for (var i = 0; i < MODEL_COUNT; i++) {
         //console.log('drawing element: ' + i);
-
-        var rand = Math.random();
 
         var mat4model = calcModel(i);
         var mat4view = calcView();
@@ -208,8 +295,57 @@ function render(now) {
     }
 
     gl.bindVertexArray(null);
-    //console.log('rendered frame');
-    //optionally swap buffers
+}
+
+var vaoFrame;
+
+function prepareFrame() {
+    var frameVerticies = [  1.0,  1.0,
+                            -1.0,  1.0,
+                            -1.0, -1.0,
+                            -1.0, -1.0,
+                            1.0, -1.0,
+                            1.0,  1.0];
+
+    var frameTextCoords = [ 1.0,  1.0,
+                            0.0,  1.0,
+                            0.0, 0.0,
+                            0.0, 0.0,
+                            1.0, 0.0,
+                            1.0,  1.0];
+
+    vaoFrame = gl.createVertexArray()
+    gl.bindVertexArray(vaoFrame);
+
+    var vboFrameV = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vboFrameV);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(frameVerticies), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(frameInputPositionLocation, 2, gl.FLOAT, gl.FALSE, 2 * FLOAT_SIZE, 0);
+    gl.enableVertexAttribArray(frameInputPositionLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    var vboFrameT = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vboFrameT);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(frameTextCoords), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(frameInputTextureLocation, 2, gl.FLOAT, gl.FALSE, 2 * FLOAT_SIZE, 0);
+    gl.enableVertexAttribArray(frameInputTextureLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    gl.bindVertexArray(null);
+}
+
+function renderFrame(frameTexture) {
+    gl.useProgram(frameShaderProgram);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.uniform1i(frameBufferTextureSamplerPointer, 0);
+
+    gl.bindVertexArray(vaoFrame);
+    gl.bindTexture(gl.TEXTURE_2D, frameTexture);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    gl.bindVertexArray(null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
 function rotateAround(mat4object, scale, vec3origin, vec3pivot, rotationFactor) {
@@ -224,13 +360,16 @@ function rotateAround(mat4object, scale, vec3origin, vec3pivot, rotationFactor) 
 }
 
 function rotateModel(mat4model, index) {
-	var rotatedModel = rotateAround(mat4model, fMODEL_SCALES[index], vec3MODEL_POSITIONS[index], vec3SUN_POSITION, 1.0);
-
+	if(fMODEL_SPEEDS[index] == 0.0) {
+        return mat4model;
+    }
 	if (index == MOON_INDEX) {
-		rotatedModel = rotateAround(rotatedModel, 1.0, vec3MODEL_POSITIONS[index], vec3EARTH_POSITION, 2.0);
-		rotatedModel = rotateAround(rotatedModel, 1.0, vec3MODEL_POSITIONS[index], vec3EARTH_POSITION, 2.0);
-	}
-
+        var rotatedModel = rotateAround(mat4model, fMODEL_SCALES[index], vec3MODEL_POSITIONS[index], vec3SUN_POSITION, fMODEL_SPEEDS[EARTH_INDEX]);
+		rotatedModel = rotateAround(rotatedModel, 1.0, vec3MODEL_POSITIONS[index], vec3EARTH_POSITION, fMODEL_SPEEDS[index]);
+		rotatedModel = rotateAround(rotatedModel, 1.0, vec3MODEL_POSITIONS[index], vec3EARTH_POSITION, fMODEL_SPEEDS[index]);
+	} else {
+        var rotatedModel = rotateAround(mat4model, fMODEL_SCALES[index], vec3MODEL_POSITIONS[index], vec3SUN_POSITION, fMODEL_SPEEDS[index]);
+    }
 	return rotatedModel;
 }
 
@@ -253,7 +392,7 @@ function calcLookAt() {
 }
 
 function calcProjection() {
-    var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    var aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
     var zNear = 0.01;
     var zFar = 1000;
 	return m4.perspective(fieldOfViewRadians, aspect, zNear, zFar);
@@ -598,24 +737,22 @@ var m4 = {
     
   };
 
+var CANVAS_WIDTH;
+var CANVAS_HEIGHT;
+
 function fitCanvasInWindow(canvas) {
     var realToCSSPixels = window.devicePixelRatio;
 
-    // Lookup the size the browser is displaying the canvas in CSS pixels
-    // and compute a size needed to make our drawingbuffer match it in
-    // device pixels.
     var displayWidth  = Math.floor(gl.canvas.clientWidth  * realToCSSPixels);
     var displayHeight = Math.floor(gl.canvas.clientHeight * realToCSSPixels);
-       
-    // Check if the canvas is not the same size.
-    if (canvas.width  != displayWidth ||
-        canvas.height != displayHeight) {
-    
-        // Make the canvas the same size
+
+    if (canvas.width  != displayWidth || canvas.height != displayHeight) {
         canvas.width  = displayWidth;
         canvas.height = displayHeight;
     }
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    CANVAS_WIDTH = gl.canvas.width;
+    CANVAS_HEIGHT = gl.canvas.height;
+    gl.viewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
 function loadShaders(vertexShaderSource, fragmentShaderSource) {
@@ -758,12 +895,12 @@ function drawSphere(radius) {
     gl.enableVertexAttribArray(inputNormalLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     
-    /*var vboT = gl.createBuffer();
+    var vboT = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vboT);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
     gl.vertexAttribPointer(inputTextureLocation, 2, gl.FLOAT, gl.FALSE, 2 * FLOAT_SIZE, 0);
     gl.enableVertexAttribArray(inputTextureLocation);
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);*/
+	gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
     gl.bindVertexArray(null);
 }
@@ -771,9 +908,9 @@ function drawSphere(radius) {
 //var GLOBAL_TRANSLATION = [-150, 0, -360];
 var GLOBAL_TRANSLATION = [0.0, 0.0, 0.0];
 
-var OBJECT_SCALE = 1.0;
+var OBJECT_SCALE = 1.5;
 //var SPACE_SCALE = 1.0;
-var ROTATION_FACTOR = 0.04;
+var ROTATION_FACTOR = 0.08;
 
 var MODEL_COUNT = 4;
 var SUN_INDEX = 0;
@@ -782,14 +919,19 @@ var PLANETX_INDEX = 2;
 var MOON_INDEX = 3;
 
 var vec3SUN_POSITION = vec3add([0.0, 0.0, 0.0], GLOBAL_TRANSLATION);
-var vec3EARTH_POSITION = vec3add([2.5, 0.0, 0.0], GLOBAL_TRANSLATION);
-var vec3PLANETX_POSITION = vec3add([4.0, 0.0, 0.0], GLOBAL_TRANSLATION);
-var vec3MOON_POSITION = vec3add([2.25, 0.0, 0.0], GLOBAL_TRANSLATION);
+var vec3EARTH_POSITION = vec3add([-2.5, 0.0, 0.0], GLOBAL_TRANSLATION);
+var vec3PLANETX_POSITION = vec3add([-4.0, 0.0, 0.0], GLOBAL_TRANSLATION);
+var vec3MOON_POSITION = vec3add([-2.25, 0.0, 0.0], GLOBAL_TRANSLATION);
 
-var SUN_SCALE = 1.5;
+var SUN_SCALE = 0.7;
 var EARTH_SCALE = 0.2;
 var PLANETX_SCALE = 0.125;
 var MOON_SCALE = 0.05;
+
+var SUN_SPEED = 0.0;
+var EARTH_SPEED = 1.0;
+var PLANETX_SPEED = 1.2;
+var MOON_SPEED = 2.0;
 
 var vec4SUN_COLOR = [1.0, 1.0, 1.0, 1.0];
 var vec4EARTH_COLOR = [0.0, 0.1, 0.0, 1.0];
@@ -806,6 +948,11 @@ var fMODEL_SCALES = [   SUN_SCALE,
                         PLANETX_SCALE,
                         MOON_SCALE];
 
+var fMODEL_SPEEDS = [SUN_SPEED,
+                    EARTH_SPEED,
+                    PLANETX_SPEED,
+                    MOON_SPEED];
+
 var vec4MODEL_COLORS = [vec4SUN_COLOR,
                         vec4EARTH_COLOR,
                         vec4PLANETX_COLOR,
@@ -820,8 +967,48 @@ var fieldOfViewRadians = toRadians(60);
 
 function setUpCamera() {
     var cameraAngleRadians = toRadians(0);
-     
-    // Compute a matrix for the camera
+
     cameraMatrix = m4.yRotation(cameraAngleRadians);
-    cameraMatrix = m4.translate(cameraMatrix, 0, 0, 7.5);
+    cameraMatrix = m4.translate(cameraMatrix, 0, 0, 6);
+}
+
+var frameBuffer;
+var frameBufferTexture;
+
+function setUpRenderTexture() {
+
+    frameBufferTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, frameBufferTexture);
+
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const border = 0;
+    const format = gl.RGBA;
+    const type = gl.UNSIGNED_BYTE;
+    const data = null;
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                            CANVAS_WIDTH, CANVAS_HEIGHT, border,
+                            format, type, data);
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    frameBuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+
+    const attachmentPoint = gl.COLOR_ATTACHMENT0;
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, frameBufferTexture, level);
+
+    // create a depth renderbuffer
+    const depthBuffer = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+     
+    // make a depth buffer and the same size as the targetTexture
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, CANVAS_WIDTH, CANVAS_HEIGHT);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.activeTexture(gl.TEXTURE0);
 }
