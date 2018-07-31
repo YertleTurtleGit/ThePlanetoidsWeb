@@ -3,23 +3,10 @@
     <head>
         <meta charset="utf-8"/>
         <title>WebGL Planets</title>
-        <style>
-            /* remove the border */
-            body {
-              border: 0;
-              background-color: black;
-              color: white;
-            }
-            /* make the canvas the size of the viewport */
-            canvas {
-              width: 100%;
-              height: 100%;
-              display: block;
-            }
-          </style>
-    </head>
-    <body onload="init();" style="background-color: black;">
-        <canvas id="surface">Your browser does not support HTML5</canvas>
+        <link rel="stylesheet" href="style.css">
         <script src="app.js"></script>
+    </head>
+    <body onresize="resized();" onload="init();" style="background-color: black;">
+        <canvas id="surface">Your browser does not support HTML5</canvas>
     </body>
 </html>

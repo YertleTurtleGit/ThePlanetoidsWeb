@@ -42,18 +42,17 @@ var fragmentShaderSource =
     'in vec4 vertColor;',
 
     'in vec2 uv;',
-    'uniform bool buffer;',
     'uniform bool bloom;',
 
     'uniform sampler2D frameBufferTextureSampler;',
 
-    'const float lightPower = 8.0;',
+    'const float lightPower = 7.85;',
     'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
     'const vec3 lightPos = vec3(0.0, 0.0, 0.0);',
     'const vec3 ambientColor = vec3(0.1, 0.1, 0.1);',
     'const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);',
     'const vec3 specColor = vec3(1.0, 1.0, 1.0);',
-    'const float shininess = 128.0;',
+    'const float shininess = 16.0;',
     'const float screenGamma = 2.2;',
 
     'out vec4 fragColor;',
@@ -79,20 +78,12 @@ var fragmentShaderSource =
                             'lambertian * diffuseColor * lightColor * lightPower / distance +',
                             'specular * specColor * lightColor * lightPower / distance;',
 
-        'colorLinear -= lightColor * lightPower * distance * 0.0245;',
+        'colorLinear -= lightColor * lightPower * distance * 0.023;',
         'colorLinear += mix(colorLinear, vertColor.rgb, 0.9);',
 
         'float alpha = 1.0;',
 
         'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
-
-        //'if(buffer) {',
-            //'if(bloom) {',
-                //'colorGamma = vec3(1.0, 0.0, 0.0);',
-            //'}',
-        //'} else {',
-            //'colorGamma = texture(frameBufferTextureSampler, uv).rgb;',
-        //'}',
 
         'fragColor = vec4(colorGamma, alpha);',     
     '}'
@@ -105,16 +96,19 @@ var frameVertexShaderSource =
     'in vec2 inputPosition;',
     'in vec2 inputTexCoord;',
 
-    'uniform mat3 frameMat;',
-    
-    'smooth out vec2 vertPos;',
-
     'out vec2 uv;',
+    'out vec2 blurCoords[5];',
 
     'void main(){',
         'gl_Position = vec4(inputPosition, 0.0, 1.0);',
-        'vertPos = inputPosition;',
         'uv = inputTexCoord;',
+
+        'vec2 singleStepOffset = vec2(0.002, 0.002);',
+	    'blurCoords[0] = inputTexCoord.xy;',
+	    'blurCoords[1] = inputTexCoord.xy + singleStepOffset * 1.407333;',
+	    'blurCoords[2] = inputTexCoord.xy - singleStepOffset * 1.407333;',
+	    'blurCoords[3] = inputTexCoord.xy + singleStepOffset * 3.294215;',
+	    'blurCoords[4] = inputTexCoord.xy - singleStepOffset * 3.294215;',
     '}'    
 ].join('\n');
 
@@ -122,20 +116,41 @@ var frameFragmentShaderSource =
 [
     '#version 300 es',
 
-    'precision mediump float;',
+    'precision highp float;',
 
     'in vec2 uv;',
-    //'uniform bool buffer;',
-    //'uniform bool bloom;',
+    'in vec2 blurCoords[5];',
+    'uniform float rand;',
 
     'uniform sampler2D frameBufferTextureSampler;',
 
     'out vec4 fragColor;',
 
+    'float random (vec2 st) {',
+        'return fract(sin(dot(st.xy, vec2(12.9898,78.233)))*43758.5453123);',
+    '}',
+
     'void main() {',
+        'vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
+        'vec4 black = vec4(0.5, 0.5, 0.5, 1.0);',
         'fragColor = texture(frameBufferTextureSampler, uv);',
-        'fragColor.a = 1.0;', 
-        //'fragColor = vec4(1.0, 0.0, 0.0, 1.0);',    
+
+        'lowp vec4 sum = vec4(0.0);',
+        'sum += texture(frameBufferTextureSampler, blurCoords[0]) * 0.204164;',
+        'sum += texture(frameBufferTextureSampler, blurCoords[1]) * 0.304005;',
+        'sum += texture(frameBufferTextureSampler, blurCoords[2]) * 0.304005;',
+        'sum += texture(frameBufferTextureSampler, blurCoords[3]) * 0.093913;',
+        'sum += texture(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
+        'fragColor += sum;',
+        
+        'if(rand-(0.2*rand) <= uv.y) {',
+            'if(uv.y <= rand+(0.2*rand)) {',
+                'fragColor = mix(texture(frameBufferTextureSampler, vec2(uv.x+0.006, uv.y)), black, 0.1 * rand);',
+            '}',
+        '}',
+
+        'float grain = random(uv.xy/vec2(rand, rand));',
+        'fragColor = mix(fragColor, vec4(grain, grain, grain, 1.0), 0.15 + (rand * 0.003));',
     '}'
 ].join('\n');
 
@@ -170,9 +185,8 @@ var modelviewProjectionPointer;
 var frameBufferTexturePointer;
 
 var bloomPointer;
-var bufferPointer;
 
-var randPointer;
+var frameRandPointer;
 
 var inputColorPointer;
 
@@ -202,9 +216,6 @@ var run = function() {
     frameBufferTexturePointer = gl.getUniformLocation(shaderProgram, 'frameBufferTexture');
 
     bloomPointer = gl.getUniformLocation(shaderProgram, 'bloom');
-    bufferPointer = gl.getUniformLocation(shaderProgram, 'buffer');
-
-    randPointer = gl.getUniformLocation(shaderProgram, 'rand');
 
     inputColorPointer = gl.getUniformLocation(shaderProgram, 'inputColor');
 
@@ -214,6 +225,7 @@ var run = function() {
 
     //bufferTextureSamplerPointer = gl.getUniformLocation(shaderProgram, 'frameBufferTextureSampler');
 
+    frameRandPointer = gl.getUniformLocation(frameShaderProgram, 'rand');
     frameMatPointer = gl.getUniformLocation(frameShaderProgram, 'frameMat');
     frameInputPositionLocation = gl.getAttribLocation(frameShaderProgram, 'inputPosition');
     frameInputTextureLocation = gl.getAttribLocation(frameShaderProgram, 'inputTexCoord');
@@ -222,11 +234,13 @@ var run = function() {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
-    setUpCamera();
     drawPlanets();
 
     setUpRenderTexture();
     prepareFrame();
+    setUpCamera();
+
+    initMouseMoveHandler();
 
     render(0);
 
@@ -237,11 +251,12 @@ var run = function() {
 
 var rotate = 0;
 var then = 0;
+var deltaTime = 0;
 
 function render(now) {
 
     now *= 1.001;  //convert to seconds
-    const deltaTime = now - then;
+    deltaTime = now - then;
     then = now;
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
@@ -261,8 +276,6 @@ function renderGeometry() {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    var rand = Math.random();
-
     gl.bindVertexArray(vao);
 
     for (var i = 0; i < MODEL_COUNT; i++) {
@@ -281,8 +294,6 @@ function renderGeometry() {
 
         gl.uniform4fv(inputColorPointer, new Float32Array(vec4MODEL_COLORS[i]));
 
-        gl.uniform1f(randPointer, rand);
-
         if(i == SUN_INDEX) {
             gl.uniform1i(bloomPointer, 1);
         } else {
@@ -295,6 +306,36 @@ function renderGeometry() {
     }
 
     gl.bindVertexArray(null);
+}
+
+var rand = 0.5;
+var randCount = 0;
+
+function renderFrame(frameTexture) {
+    gl.useProgram(frameShaderProgram);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    //var rand = (Math.sin(rotate * 0.005)) * 0.3;
+
+    if(randCount > 1000) {
+        rand = Math.random();
+        randCount = 0;
+    } else {
+        rand += randCount / 1000;
+    }
+    randCount += deltaTime;
+
+
+    gl.uniform1f(frameRandPointer, rand);
+    gl.uniform1i(frameBufferTextureSamplerPointer, 0);
+
+    gl.bindVertexArray(vaoFrame);
+    gl.bindTexture(gl.TEXTURE_2D, frameTexture);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    gl.bindVertexArray(null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
 var vaoFrame;
@@ -334,20 +375,6 @@ function prepareFrame() {
     gl.bindVertexArray(null);
 }
 
-function renderFrame(frameTexture) {
-    gl.useProgram(frameShaderProgram);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.uniform1i(frameBufferTextureSamplerPointer, 0);
-
-    gl.bindVertexArray(vaoFrame);
-    gl.bindTexture(gl.TEXTURE_2D, frameTexture);
-
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-    gl.bindVertexArray(null);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-}
-
 function rotateAround(mat4object, scale, vec3origin, vec3pivot, rotationFactor) {
     mat4object = m4.translate(mat4object, vec3pivot[0], vec3pivot[1], vec3pivot[2]);
     mat4object = m4.yRotate(mat4object, toRadians(rotate * rotationFactor));
@@ -379,7 +406,7 @@ function calcModel(index) {
 
 function calcView() {
     //return calcLookAt();
-    return m4.inverse(cameraMatrix);
+    return m4.inverse(cameraMat);
 }
 
 function calcViewProjection(view, projection) {
@@ -443,7 +470,7 @@ function loadWebGL() {
         console.error('No webgl2-context found!');
         return;
     }
-    fitCanvasInWindow(canvas, gl);
+    fitCanvasInWindow();
     //webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 }
 
@@ -740,7 +767,8 @@ var m4 = {
 var CANVAS_WIDTH;
 var CANVAS_HEIGHT;
 
-function fitCanvasInWindow(canvas) {
+function fitCanvasInWindow() {
+    var canvas = gl.canvas;
     var realToCSSPixels = window.devicePixelRatio;
 
     var displayWidth  = Math.floor(gl.canvas.clientWidth  * realToCSSPixels);
@@ -799,11 +827,6 @@ var INDICE_COUNT_OF_SPHERE = 32*32*6
 var FLOAT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 var USHORT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 
-/*var indices = new Array(INDICE_COUNT_OF_SPHERE);
-var vertices = new Array(VERTICES_COUNT_OF_SPHERE * 3);
-var normals = new Array(VERTICES_COUNT_OF_SPHERE);
-var texcoords = new Array(VERTICES_COUNT_OF_SPHERE * 2);
-var currentSphereColor = new Array(VERTICES_COUNT_OF_SPHERE * 4);*/
 var indices = [];
 var vertices = [];
 var normals = [];
@@ -865,7 +888,6 @@ function createSphere(radius)
 			uvIndex += 2;
 		}
     }
-
 }
 
 var verticiesVBO;
@@ -910,7 +932,7 @@ var GLOBAL_TRANSLATION = [0.0, 0.0, 0.0];
 
 var OBJECT_SCALE = 1.5;
 //var SPACE_SCALE = 1.0;
-var ROTATION_FACTOR = 0.08;
+var ROTATION_FACTOR = 0.04;
 
 var MODEL_COUNT = 4;
 var SUN_INDEX = 0;
@@ -920,7 +942,7 @@ var MOON_INDEX = 3;
 
 var vec3SUN_POSITION = vec3add([0.0, 0.0, 0.0], GLOBAL_TRANSLATION);
 var vec3EARTH_POSITION = vec3add([-2.5, 0.0, 0.0], GLOBAL_TRANSLATION);
-var vec3PLANETX_POSITION = vec3add([-4.0, 0.0, 0.0], GLOBAL_TRANSLATION);
+var vec3PLANETX_POSITION = vec3add([-3.5, 0.0, 0.0], GLOBAL_TRANSLATION);
 var vec3MOON_POSITION = vec3add([-2.25, 0.0, 0.0], GLOBAL_TRANSLATION);
 
 var SUN_SCALE = 0.7;
@@ -934,8 +956,8 @@ var PLANETX_SPEED = 1.2;
 var MOON_SPEED = 2.0;
 
 var vec4SUN_COLOR = [1.0, 1.0, 1.0, 1.0];
-var vec4EARTH_COLOR = [0.0, 0.1, 0.0, 1.0];
-var vec4PLANETX_COLOR = [0.1, 0.0, 0.0, 1.0];
+var vec4EARTH_COLOR = [0.1, 0.1, 0.1, 1.0];
+var vec4PLANETX_COLOR = [0.09, 0.09, 0.09, 1.0];
 var vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
 
 var vec3MODEL_POSITIONS = [ vec3SUN_POSITION,
@@ -962,14 +984,42 @@ function drawPlanets() {
 	drawSphere(OBJECT_SCALE);
 }
 
-var cameraMatrix;
+var cameraMat;
 var fieldOfViewRadians = toRadians(60);
 
-function setUpCamera() {
-    var cameraAngleRadians = toRadians(0);
+function rotateCameraAbsolut(rotX, rotY, rotZ) {
+    cameraMat = getCameraInitMatRot();
+    cameraMat = m4.multiply(cameraMat, getCameraInitMatTrans());
+    cameraMat = m4.xRotate(cameraMat, toRadians(rotX));
+    cameraMat = m4.yRotate(cameraMat, toRadians(rotY));
+    cameraMat = m4.zRotate(cameraMat, toRadians(rotZ));
+}
 
-    cameraMatrix = m4.yRotation(cameraAngleRadians);
-    cameraMatrix = m4.translate(cameraMatrix, 0, 0, 6);
+function setUpCamera() {
+    cameraMat = getCameraInitMatRot();
+    cameraMat = m4.multiply(cameraMat, getCameraInitMatTrans());
+}
+
+function getCameraInitMatRot() {
+    var newCameraMat = getIdentityMat4();
+
+    if(CANVAS_WIDTH > CANVAS_HEIGHT) {
+        newCameraMat = m4.zRotation(toRadians(-20));
+    } else {
+        newCameraMat = m4.zRotation(toRadians(65));
+    }
+    return newCameraMat;
+}
+
+function getCameraInitMatTrans() {
+    var newCameraMat = getIdentityMat4();
+
+    if(CANVAS_WIDTH > CANVAS_HEIGHT) {
+        newCameraMat = m4.translate(newCameraMat, 0.0, 0.0, 6.0);
+    } else {
+        newCameraMat = m4.translate(newCameraMat, 0.0, 0.0, 7.0);
+    }
+    return newCameraMat;
 }
 
 var frameBuffer;
@@ -1000,15 +1050,57 @@ function setUpRenderTexture() {
     const attachmentPoint = gl.COLOR_ATTACHMENT0;
     gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, frameBufferTexture, level);
 
-    // create a depth renderbuffer
     const depthBuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
      
-    // make a depth buffer and the same size as the targetTexture
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, CANVAS_WIDTH, CANVAS_HEIGHT);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
 
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.activeTexture(gl.TEXTURE0);
+}
+
+var CAMERA_MOVEMENT_FACTOR = -3.0;
+
+function initMouseMoveHandler() {
+    gl.canvas.onmousemove = function(ev) {
+        var x = 0;
+        var y = 0;
+
+        var x = ev.clientX / CANVAS_WIDTH;
+        var y = ev.clientY / CANVAS_HEIGHT;
+
+        x *= CAMERA_MOVEMENT_FACTOR;
+        y *= CAMERA_MOVEMENT_FACTOR;
+
+        if(x != null && y != null) {
+            rotateCameraAbsolut(y, x, 0.0);
+        }
+    }
+
+    var onDeviceReady=function(){
+     
+        intel.xdk.device.hideSplashScreen();
+    
+        function onAccelerationChanged(acceleration){
+            var x = acceleration.x;
+            var y = acceleration.y;
+            var z = acceleration.z;
+
+            x *= ROTATION_FACTOR;
+            y *= ROTATION_FACTOR;
+            z *= ROTATION_FACTOR;
+
+            rotateCameraAbsolut(x,y,z);
+        };
+    
+        var options = { frequency: 100, adjustForRotation: true  };
+        intel.xdk.accelerometer.watchAcceleration(onAccelerationChanged, options);
+    }
+}
+
+function resized() {
+    fitCanvasInWindow();
+    setUpRenderTexture();
 }
