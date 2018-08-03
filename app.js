@@ -1,241 +1,210 @@
 'use strict';
 
-var gl;
+const VERTEX_SHADER_SOURCE =
+        [
+        '#version 300 es',
 
-var vertexShaderSource =
-[
-    '#version 300 es',
-
-    'in vec3 inputPosition;',
-    'in vec2 inputTexCoord;',
-    'in vec3 inputNormal;',
-    
-    'uniform mat4 modelview, normalMat, modelviewProjection;',
-    'uniform vec4 inputColor;',
-
-    'uniform float rand;',
-    
-    'smooth out vec3 normalInterp;',
-    'smooth out vec3 vertPos;',
-    'out vec4 vertColor;',
-
-    'out vec2 uv;',
-
-    'void main(){',
-        'gl_Position = modelviewProjection * vec4(inputPosition, 1.0);',
-        'vec4 vertPos4 = modelviewProjection * vec4(inputPosition, 1.0);',
-        'vertPos = vertPos4.xyz / vertPos4.w;',
-        'normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));',
-        'vertColor = inputColor;',
-        'uv = inputTexCoord;',
-    '}'    
-].join('\n');
-
-var fragmentShaderSource =
-[
-    '#version 300 es',
-
-    'precision mediump float;',
-
-    'smooth in vec3 vertPos;',
-    'smooth in vec3 normalInterp;',
-    'in vec4 vertColor;',
-
-    'in vec2 uv;',
-    'uniform bool bloom;',
-
-    'uniform sampler2D frameBufferTextureSampler;',
-
-    'const float lightPower = 7.85;',
-    'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
-    'const vec3 lightPos = vec3(0.0, 0.0, 0.0);',
-    'const vec3 ambientColor = vec3(0.1, 0.1, 0.1);',
-    'const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);',
-    'const vec3 specColor = vec3(1.0, 1.0, 1.0);',
-    'const float shininess = 16.0;',
-    'const float screenGamma = 2.2;',
-
-    'out vec4 fragColor;',
-
-    'void main() {',
-
-        'vec3 normal = normalize(normalInterp);',
-        'vec3 lightDir = normalize(lightPos - vertPos);',
-        'float distance = length(lightDir);',
-
-        'float lambertian = max(dot(lightDir, normal), 0.0);',
-        'float specular = 0.0;',
-
-        'if(lambertian > 0.0) {',
-            'vec3 viewDir = normalize(-vertPos);',
-
-            'vec3 halfDir = normalize(lightDir + viewDir);',
-            'float specAngle = max(dot(halfDir, normal), 0.0);',
-            'specular = pow(specAngle, shininess);',
-        '}',
-
-        'vec3 colorLinear = ambientColor +',
-                            'lambertian * diffuseColor * lightColor * lightPower / distance +',
-                            'specular * specColor * lightColor * lightPower / distance;',
-
-        'colorLinear -= lightColor * lightPower * distance * 0.023;',
-        'colorLinear += mix(colorLinear, vertColor.rgb, 0.9);',
-
-        'float alpha = 1.0;',
-
-        'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
-
-        'fragColor = vec4(colorGamma, alpha);',     
-    '}'
-].join('\n');
-
-var frameVertexShaderSource =
-[
-    '#version 300 es',
-
-    'in vec2 inputPosition;',
-    'in vec2 inputTexCoord;',
-
-    'out vec2 uv;',
-    'out vec2 blurCoords[5];',
-
-    'void main(){',
-        'gl_Position = vec4(inputPosition, 0.0, 1.0);',
-        'uv = inputTexCoord;',
-
-        'vec2 singleStepOffset = vec2(0.002, 0.002);',
-	    'blurCoords[0] = inputTexCoord.xy;',
-	    'blurCoords[1] = inputTexCoord.xy + singleStepOffset * 1.407333;',
-	    'blurCoords[2] = inputTexCoord.xy - singleStepOffset * 1.407333;',
-	    'blurCoords[3] = inputTexCoord.xy + singleStepOffset * 3.294215;',
-	    'blurCoords[4] = inputTexCoord.xy - singleStepOffset * 3.294215;',
-    '}'    
-].join('\n');
-
-var frameFragmentShaderSource =
-[
-    '#version 300 es',
-
-    'precision highp float;',
-
-    'in vec2 uv;',
-    'in vec2 blurCoords[5];',
-    'uniform float rand;',
-
-    'uniform sampler2D frameBufferTextureSampler;',
-
-    'out vec4 fragColor;',
-
-    'float random (vec2 st) {',
-        'return fract(sin(dot(st.xy, vec2(12.9898,78.233)))*43758.5453123);',
-    '}',
-
-    'void main() {',
-        'vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
-        'vec4 black = vec4(0.5, 0.5, 0.5, 1.0);',
-        'fragColor = texture(frameBufferTextureSampler, uv);',
-
-        'lowp vec4 sum = vec4(0.0);',
-        'sum += texture(frameBufferTextureSampler, blurCoords[0]) * 0.204164;',
-        'sum += texture(frameBufferTextureSampler, blurCoords[1]) * 0.304005;',
-        'sum += texture(frameBufferTextureSampler, blurCoords[2]) * 0.304005;',
-        'sum += texture(frameBufferTextureSampler, blurCoords[3]) * 0.093913;',
-        'sum += texture(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
-        'fragColor += sum;',
+        'in vec3 inputPosition;',
+        'in vec2 inputTexCoord;',
+        'in vec3 inputNormal;',
         
-        'if(rand-(0.2*rand) <= uv.y) {',
-            'if(uv.y <= rand+(0.2*rand)) {',
-                'fragColor = mix(texture(frameBufferTextureSampler, vec2(uv.x+0.006, uv.y)), black, 0.1 * rand);',
+        'uniform mat4 modelview, normalMat, modelviewProjection;',
+        'uniform vec4 inputColor;',
+
+        'uniform float rand;',
+        
+        'smooth out vec3 normalInterp;',
+        'smooth out vec3 vertPos;',
+        'out vec4 vertColor;',
+
+        'out vec2 uv;',
+
+        'void main(){',
+            'gl_Position = modelviewProjection * vec4(inputPosition, 1.0);',
+            'vec4 vertPos4 = modelviewProjection * vec4(inputPosition, 1.0);',
+            'vertPos = vertPos4.xyz / vertPos4.w;',
+            'normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));',
+            'vertColor = inputColor;',
+            'uv = inputTexCoord;',
+        '}'    
+        ].join('\n');
+const FRAGMENT_SHADER_SOURCE =
+        [
+        '#version 300 es',
+
+        'precision mediump float;',
+
+        'smooth in vec3 vertPos;',
+        'smooth in vec3 normalInterp;',
+        'in vec4 vertColor;',
+
+        'in vec2 uv;',
+
+        'uniform sampler2D frameBufferTextureSampler;',
+
+        'const float lightPower = 7.85;',
+        'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
+        'const vec3 lightPos = vec3(0.0, 0.0, 0.0);',
+        'const vec3 ambientColor = vec3(0.1, 0.1, 0.1);',
+        'const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);',
+        'const vec3 specColor = vec3(1.0, 1.0, 1.0);',
+        'const float shininess = 16.0;',
+        'const float screenGamma = 2.2;',
+
+        'out vec4 fragColor;',
+
+        'void main() {',
+
+            'vec3 normal = normalize(normalInterp);',
+            'vec3 lightDir = normalize(lightPos - vertPos);',
+            'float distance = length(lightDir);',
+
+            'float lambertian = max(dot(lightDir, normal), 0.0);',
+            'float specular = 0.0;',
+
+            'if(lambertian > 0.0) {',
+                'vec3 viewDir = normalize(-vertPos);',
+
+                'vec3 halfDir = normalize(lightDir + viewDir);',
+                'float specAngle = max(dot(halfDir, normal), 0.0);',
+                'specular = pow(specAngle, shininess);',
             '}',
+
+            'vec3 colorLinear = ambientColor +',
+                                'lambertian * diffuseColor * lightColor * lightPower / distance +',
+                                'specular * specColor * lightColor * lightPower / distance;',
+
+            'colorLinear -= lightColor * lightPower * distance * 0.023;',
+            'colorLinear += mix(colorLinear, vertColor.rgb, 0.9);',
+
+            'float alpha = 1.0;',
+
+            'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
+
+            'fragColor = vec4(colorGamma, alpha);',     
+        '}'
+        ].join('\n');
+const VERTEX_SHADER_POST_PROCESSING_SOURCE =
+        [
+        '#version 300 es',
+
+        'in vec2 inputPosition;',
+        'in vec2 inputTexCoord;',
+
+        'out vec2 uv;',
+        'out vec2 blurCoords[5];',
+
+        'void main(){',
+            'gl_Position = vec4(inputPosition, 0.0, 1.0);',
+            'uv = inputTexCoord;',
+
+            'vec2 singleStepOffset = vec2(0.002, 0.002);',
+            'blurCoords[0] = inputTexCoord.xy;',
+            'blurCoords[1] = inputTexCoord.xy + singleStepOffset * 1.407333;',
+            'blurCoords[2] = inputTexCoord.xy - singleStepOffset * 1.407333;',
+            'blurCoords[3] = inputTexCoord.xy + singleStepOffset * 3.294215;',
+            'blurCoords[4] = inputTexCoord.xy - singleStepOffset * 3.294215;',
+        '}'    
+        ].join('\n');
+const FRAGMENT_SHADER_POST_PROCESSING_SOURCE =
+        [
+        '#version 300 es',
+
+        'precision mediump float;',
+
+        'in vec2 uv;',
+        'in vec2 blurCoords[5];',
+        'uniform float rand;',
+
+        'uniform sampler2D frameBufferTextureSampler;',
+
+        'out vec4 fragColor;',
+
+        'float random (vec2 st) {',
+            'return fract(sin(dot(st.xy, vec2(12.9898,78.233)))*43758.5453123);',
         '}',
 
-        'float grain = random(uv.xy/vec2(rand, rand));',
-        'fragColor = mix(fragColor, vec4(grain, grain, grain, 1.0), 0.15 + (rand * 0.003));',
-    '}'
-].join('\n');
+        'void main() {',
+            'vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
+            'vec4 black = vec4(0.5, 0.5, 0.5, 1.0);',
+            'fragColor = texture(frameBufferTextureSampler, uv);',
 
-var shaderProgram;
-var frameShaderProgram;
+            'lowp vec4 sum = vec4(0.0);',
+            'sum += texture(frameBufferTextureSampler, blurCoords[0]) * 0.204164;',
+            'sum += texture(frameBufferTextureSampler, blurCoords[1]) * 0.304005;',
+            'sum += texture(frameBufferTextureSampler, blurCoords[2]) * 0.304005;',
+            'sum += texture(frameBufferTextureSampler, blurCoords[3]) * 0.093913;',
+            'sum += texture(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
+            'fragColor += sum;',
+            
+            'if(rand-(0.2*rand) <= uv.y) {',
+                'if(uv.y <= rand+(0.2*rand)) {',
+                    'fragColor = mix(texture(frameBufferTextureSampler, vec2(uv.x+0.006, uv.y)), black, 0.1 * rand);',
+                '}',
+            '}',
 
-var init = function() {
-    //var vertexShaderSource = loadShaderSource(VERTEX_SHADER_PATH);
-    //var fragmentShaderSource = loadShaderSource(FRAGMENT_SHADER_PATH);
+            'float grain = random(uv.xy/vec2(rand, rand));',
+            'fragColor = mix(fragColor, vec4(grain, grain, grain, 1.0), 0.15 + (rand * 0.003));',
+        '}'
+        ].join('\n');
 
+var gl;
+var mainShaderProgram;
+var postShaderProgram;
+
+function init() {
+    gl = GlContext.getContext('surface');
+    let shaderCompiler = new GlShaderCompiler(gl);
+    mainShaderProgram = shaderCompiler.compileShaderPair(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
+    postShaderProgram = shaderCompiler.compileShaderPair(VERTEX_SHADER_POST_PROCESSING_SOURCE, FRAGMENT_SHADER_POST_PROCESSING_SOURCE);
     run();
-
 };
-
-function loadShaderSource(shaderPath) {
-    var client = new XMLHttpRequest();
-    client.open('GET', shaderPath);
-    client.onreadystatechange = function() {
-        return client.responseText;
-    }
-    client.send();
-}
 
 var vao;
 var ibo;
 
-//var projectionPointer;
-var modelviewPointer;
-var normalMatPointer;
-var modelviewProjectionPointer;
+var modelViewUniform;
+var normalUniform;
+var modelviewProjectionUniform;
 
-var frameBufferTexturePointer;
+var frameRandUniform;
 
-var bloomPointer;
-
-var frameRandPointer;
-
-var inputColorPointer;
+var inputColorUniform;
 
 var inputPositionLocation;
 var inputNormalLocation;
 var inputTextureLocation;
-var frameBufferTextureSamplerPointer;
+var frameBufferTextureSamplerUniform;
 
-var frameMatPointer;
+
 var frameInputPositionLocation;
 var frameInputTextureLocation;
 
-var run = function() {
-
-    loadWebGL();
+function run() {
 
     vao = gl.createVertexArray();
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-    shaderProgram = loadShaders(vertexShaderSource, fragmentShaderSource);
-    frameShaderProgram = loadShaders(frameVertexShaderSource, frameFragmentShaderSource);
+    modelViewUniform = new GlUniform(gl, mainShaderProgram, 'modelview', GlUniform.MAT_4());
+    normalUniform =  new GlUniform(gl, mainShaderProgram, 'normalMat', GlUniform.MAT_4());
+    modelviewProjectionUniform = new GlUniform(gl, mainShaderProgram, 'modelviewProjection', GlUniform.MAT_4());
+    inputColorUniform = new GlUniform(gl, mainShaderProgram, 'inputColor', GlUniform.VEC_4());
 
-    modelviewPointer =  gl.getUniformLocation(shaderProgram, 'modelView');
-    normalMatPointer =  gl.getUniformLocation(shaderProgram, 'normalMat');
-    modelviewProjectionPointer = gl.getUniformLocation(shaderProgram, 'modelviewProjection');
+    inputPositionLocation = gl.getAttribLocation(mainShaderProgram, 'inputPosition');
+    inputNormalLocation = gl.getAttribLocation(mainShaderProgram, 'inputNormal');
+    inputTextureLocation = gl.getAttribLocation(mainShaderProgram, 'inputTexCoord');
 
-    frameBufferTexturePointer = gl.getUniformLocation(shaderProgram, 'frameBufferTexture');
+    frameRandUniform = new GlUniform(gl, postShaderProgram, 'rand', GlUniform.FLOAT());
+    frameBufferTextureSamplerUniform = new GlUniform(gl, postShaderProgram, 'frameBufferTextureSampler', GlUniform.INT());
 
-    bloomPointer = gl.getUniformLocation(shaderProgram, 'bloom');
-
-    inputColorPointer = gl.getUniformLocation(shaderProgram, 'inputColor');
-
-    inputPositionLocation = gl.getAttribLocation(shaderProgram, 'inputPosition');
-    inputNormalLocation = gl.getAttribLocation(shaderProgram, 'inputNormal');
-    inputTextureLocation = gl.getAttribLocation(shaderProgram, 'inputTexCoord');
-
-    //bufferTextureSamplerPointer = gl.getUniformLocation(shaderProgram, 'frameBufferTextureSampler');
-
-    frameRandPointer = gl.getUniformLocation(frameShaderProgram, 'rand');
-    frameMatPointer = gl.getUniformLocation(frameShaderProgram, 'frameMat');
-    frameInputPositionLocation = gl.getAttribLocation(frameShaderProgram, 'inputPosition');
-    frameInputTextureLocation = gl.getAttribLocation(frameShaderProgram, 'inputTexCoord');
-    frameBufferTextureSamplerPointer = gl.getUniformLocation(frameShaderProgram, 'frameBufferTextureSampler');
+    frameInputPositionLocation = gl.getAttribLocation(postShaderProgram, 'inputPosition');
+    frameInputTextureLocation = gl.getAttribLocation(postShaderProgram, 'inputTexCoord');
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
+    fitCanvasInWindow();
     drawPlanets();
-
     setUpRenderTexture();
     prepareFrame();
     setUpCamera();
@@ -246,8 +215,6 @@ var run = function() {
 
     console.log('End of run method reached.');
 };
-
-//var renderInBuffer = true;
 
 var rotate = 0;
 var then = 0;
@@ -271,16 +238,14 @@ function render(now) {
 }
 
 function renderGeometry() {
-    gl.useProgram(shaderProgram);
-    //gl.uniform1i(frameBufferTextureSamplerPointer, 0);
+    gl.useProgram(mainShaderProgram);
+    //gl.uniform1i(frameBufferTextureSamplerUniform, 0);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     gl.bindVertexArray(vao);
 
     for (var i = 0; i < MODEL_COUNT; i++) {
-        //console.log('drawing element: ' + i);
-
         var mat4model = calcModel(i);
         var mat4view = calcView();
         var mat4projection = calcProjection();
@@ -288,19 +253,11 @@ function renderGeometry() {
         var mat4modelviewProjection = calcModelViewProjection(mat4modelview, mat4projection);
         var mat4normal = calcNormal(mat4modelview);
 
-        gl.uniformMatrix4fv(modelviewPointer, gl.FALSE, new Float32Array(mat4modelview));
-        gl.uniformMatrix4fv(normalMatPointer, gl.FALSE, new Float32Array(mat4normal));
-        gl.uniformMatrix4fv(modelviewProjectionPointer, gl.FALSE, new Float32Array(mat4modelviewProjection));
+        modelViewUniform.setValue(mat4modelview);
+        normalUniform.setValue(mat4normal);
+        modelviewProjectionUniform.setValue(mat4modelviewProjection);
 
-        gl.uniform4fv(inputColorPointer, new Float32Array(vec4MODEL_COLORS[i]));
-
-        if(i == SUN_INDEX) {
-            gl.uniform1i(bloomPointer, 1);
-        } else {
-            gl.uniform1i(bloomPointer, 0);
-        }
-            
-        //console.log(mat4normal);
+        inputColorUniform.setValue(vec4MODEL_COLORS[i]);
 
         gl.drawElements(gl.TRIANGLE_STRIP, VERTICES_COUNT_OF_SPHERE + 416, gl.UNSIGNED_SHORT, 0); //1440
     }
@@ -312,7 +269,7 @@ var rand = 0.5;
 var randCount = 0;
 
 function renderFrame(frameTexture) {
-    gl.useProgram(frameShaderProgram);
+    gl.useProgram(postShaderProgram);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     //var rand = (Math.sin(rotate * 0.005)) * 0.3;
@@ -326,8 +283,8 @@ function renderFrame(frameTexture) {
     randCount += deltaTime;
 
 
-    gl.uniform1f(frameRandPointer, rand);
-    gl.uniform1i(frameBufferTextureSamplerPointer, 0);
+    frameRandUniform.setValue(rand);
+    frameBufferTextureSamplerUniform.setValue(0);
 
     gl.bindVertexArray(vaoFrame);
     gl.bindTexture(gl.TEXTURE_2D, frameTexture);
@@ -456,22 +413,6 @@ function getMat4FromMat3(mat3) {
                 mat3[6], mat3[7], mat3[8], 0,
                 0      , 0      , 0      , 1];
     return mat4;
-}
-
-function loadWebGL() {
-    var canvas = document.getElementById('surface');
-    gl = canvas.getContext('webgl2');
-
-    if(!gl) {
-        console.log('No webgl2-context found. Falling back to webgl2-experimental.');
-        canvas.getContext('webgl2-experimental');
-    }
-    if(!gl) {
-        console.error('No webgl2-context found!');
-        return;
-    }
-    fitCanvasInWindow();
-    //webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 }
 
 function vec3normalize(vec3v) {
@@ -783,44 +724,6 @@ function fitCanvasInWindow() {
     gl.viewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
-function loadShaders(vertexShaderSource, fragmentShaderSource) {
-    var vertexShader = gl.createShader(gl.VERTEX_SHADER);
-    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-
-    gl.shaderSource(vertexShader, vertexShaderSource);
-    gl.shaderSource(fragmentShader, fragmentShaderSource);
-
-    compileShader(vertexShader);
-    compileShader(fragmentShader);
-
-    var program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.error('Error while linking shader program!', gl.getProgramInfoLog(program));
-        return;
-    }
-
-    //TODO: Remove when going online!
-    gl.validateProgram(program);
-    if(!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
-        console.error('Error while validating program!', gl.getProgramInfoLog(program));
-        return;
-    }
-
-    return program;
-}
-
-function compileShader(shader) {
-    gl.compileShader(shader);
-    if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('ERROR compiling shader!', gl.getShaderInfoLog(shader));
-        return;
-    }
-}
-
 var VERTICES_COUNT_OF_SPHERE = 32*32
 var INDICE_COUNT_OF_SPHERE = 32*32*6
 
@@ -917,12 +820,12 @@ function drawSphere(radius) {
     gl.enableVertexAttribArray(inputNormalLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     
-    var vboT = gl.createBuffer();
+    /*var vboT = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vboT);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(inputTextureLocation, 2, gl.FLOAT, gl.FALSE, 2 * FLOAT_SIZE, 0);
+    gl.vertexAttribUniform(inputTextureLocation, 2, gl.FLOAT, gl.FALSE, 2 * FLOAT_SIZE, 0);
     gl.enableVertexAttribArray(inputTextureLocation);
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);
+	gl.bindBuffer(gl.ARRAY_BUFFER, null);*/
 
     gl.bindVertexArray(null);
 }
