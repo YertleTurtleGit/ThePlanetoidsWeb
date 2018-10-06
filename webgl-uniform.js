@@ -32,7 +32,7 @@ class GlUniform {
             break;
 
             default:
-                console.log("Uniform type not implemented.");
+                console.error("Uniform type not implemented.");
         }
     }
 }
