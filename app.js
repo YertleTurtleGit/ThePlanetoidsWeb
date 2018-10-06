@@ -1,23 +1,31 @@
 'use strict';
 
+const DEBUG_MODE = true;
+
+function printDebug(message) {
+    if(DEBUG_MODE) {
+        console.log(message);
+    }
+}
+
 const VERTEX_SHADER_SOURCE =
         [
-        '#version 300 es',
+        '#version 100',
 
-        'in vec3 inputPosition;',
-        'in vec2 inputTexCoord;',
-        'in vec3 inputNormal;',
+        'attribute vec3 inputPosition;',
+        'attribute vec2 inputTexCoord;',
+        'attribute vec3 inputNormal;',
         
         'uniform mat4 modelview, normalMat, modelviewProjection;',
         'uniform vec4 inputColor;',
 
         'uniform float rand;',
         
-        'smooth out vec3 normalInterp;',
-        'smooth out vec3 vertPos;',
-        'out vec4 vertColor;',
+        'varying vec3 normalInterp;',
+        'varying vec3 vertPos;',
+        'varying vec4 vertColor;',
 
-        'out vec2 uv;',
+        'varying vec2 uv;',
 
         'void main(){',
             'gl_Position = modelviewProjection * vec4(inputPosition, 1.0);',
@@ -28,17 +36,18 @@ const VERTEX_SHADER_SOURCE =
             'uv = inputTexCoord;',
         '}'    
         ].join('\n');
+
 const FRAGMENT_SHADER_SOURCE =
         [
-        '#version 300 es',
+        '#version 100',
 
         'precision mediump float;',
 
-        'smooth in vec3 vertPos;',
-        'smooth in vec3 normalInterp;',
-        'in vec4 vertColor;',
+        'varying vec3 vertPos;',
+        'varying vec3 normalInterp;',
+        'varying vec4 vertColor;',
 
-        'in vec2 uv;',
+        'varying vec2 uv;',
 
         'uniform sampler2D frameBufferTextureSampler;',
 
@@ -51,7 +60,7 @@ const FRAGMENT_SHADER_SOURCE =
         'const float shininess = 16.0;',
         'const float screenGamma = 2.2;',
 
-        'out vec4 fragColor;',
+        'vec4 fragColor;',
 
         'void main() {',
 
@@ -81,18 +90,20 @@ const FRAGMENT_SHADER_SOURCE =
 
             'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
 
-            'fragColor = vec4(colorGamma, alpha);',     
+            'fragColor = vec4(colorGamma, alpha);',
+            'gl_FragColor = fragColor;',     
         '}'
         ].join('\n');
+
 const VERTEX_SHADER_POST_PROCESSING_SOURCE =
         [
-        '#version 300 es',
+        '#version 100',
 
-        'in vec2 inputPosition;',
-        'in vec2 inputTexCoord;',
+        'attribute vec2 inputPosition;',
+        'attribute vec2 inputTexCoord;',
 
-        'out vec2 uv;',
-        'out vec2 blurCoords[5];',
+        'varying vec2 uv;',
+        'varying vec2 blurCoords[5];',
 
         'void main(){',
             'gl_Position = vec4(inputPosition, 0.0, 1.0);',
@@ -106,19 +117,20 @@ const VERTEX_SHADER_POST_PROCESSING_SOURCE =
             'blurCoords[4] = inputTexCoord.xy - singleStepOffset * 3.294215;',
         '}'    
         ].join('\n');
+
 const FRAGMENT_SHADER_POST_PROCESSING_SOURCE =
         [
-        '#version 300 es',
+        '#version 100',
 
         'precision mediump float;',
 
-        'in vec2 uv;',
-        'in vec2 blurCoords[5];',
+        'varying vec2 uv;',
+        'varying vec2 blurCoords[5];',
         'uniform float rand;',
 
         'uniform sampler2D frameBufferTextureSampler;',
 
-        'out vec4 fragColor;',
+        'vec4 fragColor;',
 
         'float random (vec2 st) {',
             'return fract(sin(dot(st.xy, vec2(12.9898,78.233)))*43758.5453123);',
@@ -127,34 +139,41 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE =
         'void main() {',
             'vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
             'vec4 black = vec4(0.5, 0.5, 0.5, 1.0);',
-            'fragColor = texture(frameBufferTextureSampler, uv);',
+            'fragColor = texture2D(frameBufferTextureSampler, uv);',
 
             'lowp vec4 sum = vec4(0.0);',
-            'sum += texture(frameBufferTextureSampler, blurCoords[0]) * 0.204164;',
-            'sum += texture(frameBufferTextureSampler, blurCoords[1]) * 0.304005;',
-            'sum += texture(frameBufferTextureSampler, blurCoords[2]) * 0.304005;',
-            'sum += texture(frameBufferTextureSampler, blurCoords[3]) * 0.093913;',
-            'sum += texture(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
+            'sum += texture2D(frameBufferTextureSampler, blurCoords[0]) * 0.204164;',
+            'sum += texture2D(frameBufferTextureSampler, blurCoords[1]) * 0.304005;',
+            'sum += texture2D(frameBufferTextureSampler, blurCoords[2]) * 0.304005;',
+            'sum += texture2D(frameBufferTextureSampler, blurCoords[3]) * 0.093913;',
+            'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
             'fragColor += sum;',
             
             'if(rand-(0.2*rand) <= uv.y) {',
                 'if(uv.y <= rand+(0.2*rand)) {',
-                    'fragColor = mix(texture(frameBufferTextureSampler, vec2(uv.x+0.006, uv.y)), black, 0.1 * rand);',
+                    'fragColor = mix(texture2D(frameBufferTextureSampler, vec2(uv.x+0.006, uv.y)), black, 0.1 * rand);',
                 '}',
             '}',
 
             'float grain = random(uv.xy/vec2(rand, rand));',
             'fragColor = mix(fragColor, vec4(grain, grain, grain, 1.0), 0.15 + (rand * 0.003));',
+            'gl_FragColor = fragColor;',
         '}'
         ].join('\n');
 
 var gl;
+var vaoExt;
 var mainShaderProgram;
 var postShaderProgram;
 
 function init() {
     gl = GlContext.getContext('surface');
     let shaderCompiler = new GlShaderCompiler(gl);
+    vaoExt = (
+        gl.getExtension('OES_vertex_array_object') ||
+        gl.getExtension('MOZ_OES_vertex_array_object') ||
+        gl.getExtension('WEBKIT_OES_vertex_array_object')
+    );
     mainShaderProgram = shaderCompiler.compileShaderPair(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
     postShaderProgram = shaderCompiler.compileShaderPair(VERTEX_SHADER_POST_PROCESSING_SOURCE, FRAGMENT_SHADER_POST_PROCESSING_SOURCE);
     run();
@@ -182,7 +201,8 @@ var frameInputTextureLocation;
 
 function run() {
 
-    vao = gl.createVertexArray();
+    vao = vaoExt.createVertexArrayOES();
+
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     modelViewUniform = new GlUniform(gl, mainShaderProgram, 'modelview', GlUniform.MAT_4());
@@ -203,22 +223,27 @@ function run() {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
-    console.log('fitCanvasInWindow');
+    printDebug('initializing canvas...')
     fitCanvasInWindow();
-    console.log('drawPlanets');
+
+    printDebug('drawing...');
     drawPlanets();
-    console.log('setUpRenderTexture');
+
+    printDebug('setting up render texture...');
     setUpRenderTexture();
-    console.log('prepareFrame');
+
+    printDebug('preparing frame...');
     prepareFrame();
-    console.log('setUpCamera');
+
+    printDebug('setting up Camera...');
     setUpCamera();
-    console.log('initMouseMoveHandler');
+
+    printDebug('initializing mouse-handlers...');
     initMouseMoveHandler();
 
     render(0);
 
-    console.log('End of run method reached.');
+    printDebug('INITIALIZING FINISHED!');
 };
 
 var rotate = 0;
@@ -248,7 +273,7 @@ function renderGeometry() {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.bindVertexArray(vao);
+    vaoExt.bindVertexArrayOES(vao);
 
     for (var i = 0; i < MODEL_COUNT; i++) {
         var mat4model = calcModel(i);
@@ -267,7 +292,7 @@ function renderGeometry() {
         gl.drawElements(gl.TRIANGLE_STRIP, VERTICES_COUNT_OF_SPHERE + 416, gl.UNSIGNED_SHORT, 0); //1440
     }
 
-    gl.bindVertexArray(null);
+    vaoExt.bindVertexArrayOES(null);
 }
 
 var rand = 0.5;
@@ -291,12 +316,12 @@ function renderFrame(frameTexture) {
     frameRandUniform.setValue(rand);
     frameBufferTextureSamplerUniform.setValue(0);
 
-    gl.bindVertexArray(vaoFrame);
+    vaoExt.bindVertexArrayOES(vaoFrame);
     gl.bindTexture(gl.TEXTURE_2D, frameTexture);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    gl.bindVertexArray(null);
+    vaoExt.bindVertexArrayOES(null);
     gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
@@ -317,8 +342,8 @@ function prepareFrame() {
                             1.0, 0.0,
                             1.0,  1.0];
 
-    vaoFrame = gl.createVertexArray()
-    gl.bindVertexArray(vaoFrame);
+    vaoFrame = vaoExt.createVertexArrayOES()
+    vaoExt.bindVertexArrayOES(vaoFrame);
 
     var vboFrameV = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vboFrameV);
@@ -334,7 +359,7 @@ function prepareFrame() {
     gl.enableVertexAttribArray(frameInputTextureLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-    gl.bindVertexArray(null);
+    vaoExt.bindVertexArrayOES(null);
 }
 
 function rotateModel(mat4model, index) {
@@ -393,7 +418,7 @@ function toRadians(angleDegree) {
     return angleDegree * (Math.PI / 180);
 }
 
-function getMat4FromMat3(mat3) {
+/*function getMat4FromMat3(mat3) {
     var mat4 = [mat3[0], mat3[1], mat3[2], 0,
                 mat3[3], mat3[4], mat3[5], 0,
                 mat3[6], mat3[7], mat3[8], 0,
@@ -403,7 +428,6 @@ function getMat4FromMat3(mat3) {
 
 function vec3normalize(vec3v) {
     var length = Math.sqrt(vec3v[0] * vec3v[0] + vec3v[1] * vec3v[1] + vec3v[2] * vec3v[2]);
-    // make sure we don't divide by 0.
     if (length > 1.00001) {
         return [vec3v[0] / length, vec3v[1] / length, vec3v[2] / length];
     } else {
@@ -417,16 +441,16 @@ function vec3cross(vec3a, vec3b) {
             vec3a[0] * vec3b[1] - vec3a[1] * vec3b[0]];
 }
 
-function vec3add(vec3a, vec3b) {
-    return [vec3a[0] + vec3b[0],
-            vec3a[1] + vec3b[1],
-            vec3a[2] + vec3b[2]];
-}
-
 function vec3sub(vec3a, vec3b) {
     return [vec3a[0] - vec3b[0],
             vec3a[1] - vec3b[1],
             vec3a[2] - vec3b[2]];
+}*/
+
+function vec3add(vec3a, vec3b) {
+    return [vec3a[0] + vec3b[0],
+            vec3a[1] + vec3b[1],
+            vec3a[2] + vec3b[2]];
 }
 
 var CANVAS_WIDTH;
@@ -525,7 +549,7 @@ var colorVBO;
 function drawSphere(radius) {
        
 	createSphere(radius);
-    gl.bindVertexArray(vao);
+    vaoExt.bindVertexArrayOES(vao);
 
     ibo = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
@@ -552,7 +576,7 @@ function drawSphere(radius) {
     gl.enableVertexAttribArray(inputTextureLocation);
 	gl.bindBuffer(gl.ARRAY_BUFFER, null);*/
 
-    gl.bindVertexArray(null);
+    vaoExt.bindVertexArrayOES(null);
 }
 
 //var GLOBAL_TRANSLATION = [-150, 0, -360];

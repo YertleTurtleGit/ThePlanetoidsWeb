@@ -2,7 +2,8 @@
 
 class GlContext {
     static getContext(CANVAS_ID) {
-        const WEBGL_CONTEXT_NAMES = ["webgl2", "experimental-webgl2", "webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
+        printDebug('getting webgl context...');
+        const WEBGL_CONTEXT_NAMES = ['webgl', 'experimental-webgl', 'webgl', 'experimental-webgl', 'webkit-3d', 'moz-webgl'];
 
         var canvas = document.getElementById(CANVAS_ID);
         var webglContext;
@@ -16,6 +17,8 @@ class GlContext {
             webglContext = canvas.getContext(WEBGL_CONTEXT_NAMES[index]);
             this.WEBGL_USED_CONTEXT = WEBGL_CONTEXT_NAMES[index];
             index++;
+
+            printDebug('used context: ' + this.WEBGL_USED_CONTEXT);
         }
         return webglContext;
     }
