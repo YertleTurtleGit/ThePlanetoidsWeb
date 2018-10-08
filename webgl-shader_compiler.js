@@ -9,7 +9,7 @@ class GlShaderCompiler {
     compileShader(shader) {
         this.gl.compileShader(shader);
         if(!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-            console.error('ERROR compiling shader!', this.gl.getShaderInfoLog(shader));
+            console.error('Error while compiling shader!', this.gl.getShaderInfoLog(shader));
             return;
         }
     }
@@ -34,11 +34,12 @@ class GlShaderCompiler {
             return;
         }
     
-        //TODO: Remove when going online!
-        this.gl.validateProgram(program);
-        if(!this.gl.getProgramParameter(program, this.gl.VALIDATE_STATUS)) {
-            console.error('Error while validating program!', this.gl.getProgramInfoLog(program));
-            return;
+        if(DEBUG_MODE) {
+            this.gl.validateProgram(program);
+            if(!this.gl.getProgramParameter(program, this.gl.VALIDATE_STATUS)) {
+                console.error('Error while validating program!', this.gl.getProgramInfoLog(program));
+                return;
+            }
         }
     
         return program;
