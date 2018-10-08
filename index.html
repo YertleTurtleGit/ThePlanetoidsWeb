@@ -4,10 +4,6 @@
         <meta charset='utf-8'/>
         <title>WebGL Planets</title>
         <link rel='stylesheet' href='style.css'>
-        <script src='webgl-context.js'></script>
-        <script src='webgl-shader_compiler.js'></script>
-        <script src='webgl-uniform.js'></script>
-        <script src='mat4.js'></script>
     </head>
     <body onresize='resized();' onload='init();' style='background-color: black;'>
     <div id='all'>
@@ -15,6 +11,15 @@
             <h1>THE<br>PLANETOIDS</h1>
         </div>
         <canvas id='surface'>Your browser does not support HTML5</canvas>
+
+        <script src='declarations.js'></script>
+
+        <script src='webgl-context.js'></script>
+        <script src='webgl-framebuffer.js'></script>
+        <script src='webgl-shader_compiler.js'></script>
+        <script src='webgl-uniform.js'></script>
+        <script src='mat4.js'></script>
+        
         <script src='app.js'></script>
     </div>
     </body>
