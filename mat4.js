@@ -18,12 +18,6 @@ class Mat4 {
         this.mat = mat4;
     }
 
-    static create(mat4) {
-        let mat4Object = new Mat4();
-        mat4Object.set(mat4);
-        return mat4Object;
-    }
-
     static identity() {
         return [1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
