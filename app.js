@@ -149,8 +149,8 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE =
             'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
             'fragColor += sum;',
             
-            'if(rand-(0.2*rand) <= uv.y) {',
-                'if(uv.y <= rand+(0.2*rand)) {',
+            'if(rand-(0.3*rand) <= uv.y) {',
+                'if(uv.y <= rand+(0.3*rand)) {',
                     'fragColor = mix(texture2D(frameBufferTextureSampler, vec2(uv.x+0.006, uv.y)), black, 0.1 * rand);',
                 '}',
             '}',
@@ -238,8 +238,8 @@ function run() {
     printDebug('setting up Camera...');
     setUpCamera();
 
-    //printDebug('initializing mouse-handlers...');
-    //initMouseMoveHandler();
+    printDebug('initializing mouse-handlers...');
+    initMouseMoveHandler();
 
     render(0);
 
@@ -262,7 +262,7 @@ function render(now) {
 
     renderFrame(frameBufferTexture);
 
-    rotate += ROTATION_FACTOR * deltaTime;
+    rotate += Math.sin(now * 0.01) * 0.25;
 
     rotateCameraAbsolut(Math.cos(rotate*-0.01)*4, Math.sin(rotate*0.05)*2, Math.sin(rotate*-0.005)*8);
 
@@ -307,11 +307,11 @@ function renderFrame(frameTexture) {
 
     //var rand = (Math.sin(rotate * 0.005)) * 0.3;
 
-    if(randCount > 1000) {
+    if(randCount > 1500) {
         rand = Math.random();
         randCount = 0;
     } else {
-        rand += randCount / 1000;
+        rand += randCount / 725;
     }
     randCount += deltaTime;
 
@@ -717,9 +717,11 @@ function setUpRenderTexture() {
 
 var CAMERA_MOVEMENT_FACTOR = -3.0;
 
+var allDiv = document.getElementById('all');
+
 function initMouseMoveHandler() {
-    gl.canvas.onmousemove = function(ev) {
-        var x = 0;
+    all.onmousemove = function(ev) {
+        /*var x = 0;
         var y = 0;
 
         var x = ev.clientX / CANVAS_WIDTH;
@@ -730,7 +732,11 @@ function initMouseMoveHandler() {
 
         if(x != null && y != null) {
             rotateCameraAbsolut(y, x, 0.0);
-        }
+        }*/
+        rotate += ROTATION_FACTOR * 50;
+    }
+    all.ontouchmove = function() {
+        rotate += ROTATION_FACTOR * 50;
     }
 
     var onDeviceReady=function(){
