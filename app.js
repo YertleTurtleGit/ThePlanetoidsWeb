@@ -238,8 +238,8 @@ function run() {
     printDebug('setting up Camera...');
     setUpCamera();
 
-    printDebug('initializing mouse-handlers...');
-    initMouseMoveHandler();
+    //printDebug('initializing mouse-handlers...');
+    //initMouseMoveHandler();
 
     render(0);
 
@@ -264,6 +264,8 @@ function render(now) {
 
     rotate += ROTATION_FACTOR * deltaTime;
 
+    rotateCameraAbsolut(Math.cos(rotate*-0.01)*4, Math.sin(rotate*0.05)*2, Math.sin(rotate*-0.005)*8);
+
     requestAnimationFrame(render);
 }
 
@@ -275,10 +277,11 @@ function renderGeometry() {
 
     vaoExt.bindVertexArrayOES(vao);
 
+    var mat4view = calcView();
+    var mat4projection = calcProjection();    
+
     for (var i = 0; i < MODEL_COUNT; i++) {
         var mat4model = calcModel(i);
-        var mat4view = calcView();
-        var mat4projection = calcProjection();
         var mat4modelview = calcModelView(mat4model, mat4view);
         var mat4modelviewProjection = calcModelViewProjection(mat4modelview, mat4projection);
         var mat4normal = calcNormal(mat4modelview);
@@ -366,11 +369,11 @@ function rotateModel(mat4model, index) {
 	if(fMODEL_SPEEDS[index] == 0.0) {
         return mat4model;
     }
-    let rotatedModel = new Mat4(mat4model);
+    let rotatedModel = new Mat4(mat4model);   
 	if (index == MOON_INDEX) {
         rotatedModel.rotateAround(vec3SUN_POSITION, rotate, fMODEL_SPEEDS[EARTH_INDEX], vec3MODEL_POSITIONS[index], fMODEL_SCALES[index]);
-        rotatedModel.rotateAround(vec3EARTH_POSITION, rotate, fMODEL_SPEEDS[index], vec3MODEL_POSITIONS[index], fMODEL_SCALES[index]);
-        rotatedModel.rotateAround(vec3EARTH_POSITION, rotate, fMODEL_SPEEDS[index], fMODEL_SPEEDS[index], vec3MODEL_POSITIONS[index], 1.0);
+        rotatedModel.rotateAround(vec3EARTH_POSITION, rotate, fMODEL_SPEEDS[index], vec3MODEL_POSITIONS[index], 1.0);
+        rotatedModel.rotateAround(vec3EARTH_POSITION, rotate, fMODEL_SPEEDS[index], vec3MODEL_POSITIONS[index], 1.0);
 	} else {
         rotatedModel.rotateAround(vec3SUN_POSITION, rotate, fMODEL_SPEEDS[index], vec3MODEL_POSITIONS[index], fMODEL_SCALES[index]);
     }
@@ -410,8 +413,7 @@ function calcModelViewProjection(modelView, projection) {
 
 function calcNormal(modelView) {
     let tmpMat4ModelView = new Mat4(modelView);
-    tmpMat4ModelView.inverseTranspose();
-    return tmpMat4ModelView.get();
+    return tmpMat4ModelView.inverseTranspose();
 }
 
 function toRadians(angleDegree) {
@@ -612,20 +614,20 @@ var vec4EARTH_COLOR = [0.1, 0.1, 0.1, 1.0];
 var vec4PLANETX_COLOR = [0.09, 0.09, 0.09, 1.0];
 var vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
 
-var vec3MODEL_POSITIONS = [ vec3SUN_POSITION,
-                            vec3EARTH_POSITION,
-                            vec3PLANETX_POSITION,
-                            vec3MOON_POSITION];
+var vec3MODEL_POSITIONS = [vec3SUN_POSITION,
+                           vec3EARTH_POSITION,
+                           vec3PLANETX_POSITION,
+                           vec3MOON_POSITION];
 
-var fMODEL_SCALES = [   SUN_SCALE,
-                        EARTH_SCALE,
-                        PLANETX_SCALE,
-                        MOON_SCALE];
+var fMODEL_SCALES = [SUN_SCALE,
+                     EARTH_SCALE,
+                     PLANETX_SCALE,
+                     MOON_SCALE];
 
 var fMODEL_SPEEDS = [SUN_SPEED,
-                    EARTH_SPEED,
-                    PLANETX_SPEED,
-                    MOON_SPEED];
+                     EARTH_SPEED,
+                     PLANETX_SPEED,
+                     MOON_SPEED];
 
 var vec4MODEL_COLORS = [vec4SUN_COLOR,
                         vec4EARTH_COLOR,
