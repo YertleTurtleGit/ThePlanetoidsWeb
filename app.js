@@ -14,6 +14,8 @@ var postShaderProgram;
 
 function init() {
     gl = GlContext.getContext('surface');
+    printDebug('initializing canvas...')
+    fitCanvasInWindow();
     let shaderCompiler = new GlShaderCompiler(gl);
     vaoExt = (
         gl.getExtension('OES_vertex_array_object') ||
@@ -71,9 +73,6 @@ function run() {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
-    printDebug('initializing canvas...')
-    fitCanvasInWindow();
-
     printDebug('drawing...');
     drawPlanets();
 
@@ -110,7 +109,7 @@ function render(now) {
 
     rotate += Math.sin(now * 0.01) * 0.25;
 
-    rotateCameraAbsolut(Math.cos(rotate*-0.01)*4, Math.sin(rotate*0.05)*2, Math.sin(rotate*-0.005)*8);
+    rotateCameraAbsolut(Math.cos(rotate*-0.01), Math.sin(rotate*0.05), Math.sin(rotate*-0.005));
 
     requestAnimationFrame(render);
 }
@@ -234,6 +233,12 @@ var aspect;
 
 function fitCanvasInWindow() {
     var canvas = gl.canvas;
+    var realToCSSPixels = window.devicePixelRatio;
+    canvas.width = document.width / DIRTY_SCALING_FACTOR;
+    canvas.height = document.height / DIRTY_SCALING_FACTOR;
+    canvas.style.transform = 'scale3d(' + DIRTY_SCALING_FACTOR + ', ' + DIRTY_SCALING_FACTOR + ', 1.0)';
+    canvas.style.transformOrigin = '0 0 0';
+
     var realToCSSPixels = window.devicePixelRatio;
 
     var displayWidth  = Math.floor(gl.canvas.clientWidth  * realToCSSPixels);
@@ -393,6 +398,8 @@ function getCameraInitMatTrans() {
 function initMouseMoveHandler() {
 
     var allDiv = document.getElementById('all');
+    var contentBoxDiv = document.getElementById('content-box');
+    var contentBoxIndex = 0;
 
     allDiv.onmousemove = function(ev) {
         /*var x = 0;
@@ -412,6 +419,22 @@ function initMouseMoveHandler() {
 
     allDiv.ontouchmove = function() {
         rotate += ROTATION_FACTOR * 50;
+    }
+
+    allDiv.onwheel = function(ev) {
+        rotate += ROTATION_FACTOR * 100;
+        if(ev.deltaY < 0) {
+            if(contentBoxIndex > 0) {
+                contentBoxIndex--;
+            }
+        }
+        if(ev.deltaY > 0) {
+            if(contentBoxIndex < 5) {
+                contentBoxIndex++;
+            } 
+        }
+        contentBoxDiv.style.transform = 'translate(0px, -' + contentBoxIndex*550 + 'px)';
+        printDebug(contentBoxIndex);
     }
 }
 

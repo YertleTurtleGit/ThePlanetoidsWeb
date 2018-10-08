@@ -2,6 +2,8 @@
 
 const DEBUG_MODE = true;
 
+const DIRTY_SCALING_FACTOR = 2; //1 means no scaling
+
 const VERTICES_COUNT_OF_SPHERE = 32*32
 const INDICE_COUNT_OF_SPHERE = 32*32*6
 
