@@ -42,7 +42,7 @@ const vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
 
 const BACKGROUND_COLOR = [0.005, 0.005, 0.005, 1.0];
 
-//const CAMERA_MOVEMENT_FACTOR = -3.0;
+const CAMERA_MOVEMENT_FACTOR = -3.0;
 
 const vec3MODEL_POSITIONS = [vec3SUN_POSITION,
                            vec3EARTH_POSITION,

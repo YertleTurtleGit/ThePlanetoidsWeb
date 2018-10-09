@@ -6,7 +6,7 @@ body {
 }
 .link {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 3rem;
+    font-size: 4rem;
     font-style: oblique;
     text-transform: uppercase;
     color: rgba(128, 128, 128, 0.0);
@@ -21,9 +21,48 @@ body {
     transition: all 1s;
 }
 
+.link-dot {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 4rem;
+    font-style: oblique;
+    color: rgba(128, 128, 128, 1.0);
+    text-shadow: 2px 2px rgba(0, 0, 0, 1.0);
+    transition: all 1s;
+    width: 3%;
+    float: left;
+}
+
+#link-dots {
+    position: absolute;
+    top: 55%;
+    left: 41%;
+    width: 100%;
+    text-align: center;
+    float: center;
+}
+
+#title {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1.5rem;
+    font-style: oblique;
+    text-transform: uppercase;
+    text-shadow: 2px 2px rgba(0, 0, 0, 1.0);
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transition: all 1s;
+}
+
 #link-0 {
     color: rgba(128, 128, 128, 1.0);
     text-shadow: 2px 2px rgba(0, 0, 0, 1.0);
+}
+
+#link-dot-0 {
+    color: rgba(66, 66, 66, 1.0);
 }
 
 #content-box {
@@ -36,6 +75,7 @@ body {
     margin: 0px;
     padding: 0px;
     float: none;
+    text-align: center
 }
 
 canvas {
@@ -69,16 +109,35 @@ canvas {
     width: 100%;
     z-index: 9999;
 }
-#title {
-    top: 5%;
-    width: 100%;
-    text-align: center;
-    position: fixed;
+
+@media (max-width: 850px) {
+    .link {
+        font-size: 3.5rem;
+    }
 }
 
 @media (max-width: 500px) {
     #content-box {
         left: 0%;
         width: 100%;
+    }
+    .link {
+        font-size: 3rem;
+    }
+    #title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 350px) {
+    #content-box {
+        left: 0%;
+        width: 100%;
+    }
+    .link {
+        font-size: 2.5rem;
+    }
+    #title {
+        font-size: 1rem;
     }
 }

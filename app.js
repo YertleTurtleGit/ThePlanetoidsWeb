@@ -94,28 +94,33 @@ function run() {
 };
 
 var rotate = 0;
+var cameraRotate = 0;
 var then = 0;
 var deltaTime = 0;
+var camRelRotX = 0;
+var camRelRotY = 0;
+var camRelRotZ = 0;
 
 var animationDuration = 1;
 
 function render(now) {
+
+    now *= 1.001;  //convert to seconds
+    deltaTime = now - then;
+    then = now;
+
+    ppFrameBuffer.drawToBuffer(true);
+    renderGeometry();
+    ppFrameBuffer.drawToBuffer(false);
+    renderFrame();
+
     if(animationDuration > 0) {
         animationDuration--;
-        now *= 1.001;  //convert to seconds
-        deltaTime = now - then;
-        then = now;
-
-        ppFrameBuffer.drawToBuffer(true);
-        renderGeometry();
-        ppFrameBuffer.drawToBuffer(false);
-        renderFrame();
-
-        rotate += Math.sin(now * 0.01) * 0.25;
-
-        rotateCameraAbsolut(Math.cos(rotate*-0.01), Math.sin(rotate*0.05), Math.sin(rotate*-0.005));
-        rotate += ROTATION_FACTOR * 50;
+        rotate += ROTATION_FACTOR * 63;
     }
+
+    rotate += Math.sin(now * 0.01) * 0.25;
+    rotateCameraAbsolut(Math.cos(rotate*-0.01) + camRelRotX, Math.sin(rotate*0.05) + camRelRotY, Math.sin(rotate*-0.005) + camRelRotZ);
 
     requestAnimationFrame(render);
 }
@@ -375,6 +380,12 @@ function rotateCameraAbsolut(rotX, rotY, rotZ) {
     cameraMat.zRotate(toRadians(rotZ));
 }
 
+function rotateCameraRelative(rotX, rotY, rotZ) {
+    camRelRotX = rotX;
+    camRelRotY = rotY;
+    camRelRotZ = rotZ;
+}
+
 function setUpCamera() {
     cameraMat.set(getCameraInitMatRot());
     cameraMat.multiply(getCameraInitMatTrans());
@@ -402,39 +413,112 @@ function getCameraInitMatTrans() {
     return newCameraMat.get();
 }
 
+function fitCamRotToPos(x,y) {
+    x *= CAMERA_MOVEMENT_FACTOR;
+    y *= CAMERA_MOVEMENT_FACTOR;
+
+    if(x != null && y != null) {
+        rotateCameraRelative(y, x, 0.0);
+    }
+}
+
+function swipedetect(el, callback){
+  
+    var touchsurface = el,
+    swipedir,
+    startX,
+    startY,
+    distX,
+    distY,
+    threshold = 50, //required min distance traveled to be considered swipe
+    restraint = 300, // maximum distance allowed at the same time in perpendicular direction
+    allowedTime = 300, // maximum time allowed to travel that distance
+    elapsedTime,
+    startTime,
+    handleswipe = callback || function(swipedir){}
+  
+    touchsurface.addEventListener('touchstart', function(e){
+        var touchobj = e.changedTouches[0]
+        swipedir = 'none'
+        var dist = 0
+        startX = touchobj.pageX
+        startY = touchobj.pageY
+        startTime = new Date().getTime() // record time when finger first makes contact with surface
+        e.preventDefault()
+    }, false)
+  
+    touchsurface.addEventListener('touchmove', function(e){
+        e.preventDefault() // prevent scrolling when inside DIV
+    }, false)
+  
+    touchsurface.addEventListener('touchend', function(e){
+        var touchobj = e.changedTouches[0]
+        distX = touchobj.pageX - startX // get horizontal dist traveled by finger while in contact with surface
+        distY = touchobj.pageY - startY // get vertical dist traveled by finger while in contact with surface
+        elapsedTime = new Date().getTime() - startTime // get time elapsed
+        if (elapsedTime <= allowedTime){ // first condition for awipe met
+            if (Math.abs(distX) >= threshold && Math.abs(distY) <= restraint){ // 2nd condition for horizontal swipe met
+                swipedir = (distX < 0)? 'left' : 'right' // if dist traveled is negative, it indicates left swipe
+            }
+            else if (Math.abs(distY) >= threshold && Math.abs(distX) <= restraint){ // 2nd condition for vertical swipe met
+                swipedir = (distY < 0)? 'up' : 'down' // if dist traveled is negative, it indicates up swipe
+            }
+        }
+        handleswipe(swipedir)
+        e.preventDefault()
+    }, false)
+}
+
 function initMouseMoveHandler() {
 
     var allDiv = document.getElementById('all');
     var contentBoxIndex = 0;
+    var yTouchStart;
+
+    swipedetect(allDiv, function(swipedir) {
+        rotate += ROTATION_FACTOR * 100;
+        var oldDiv = document.getElementById('link-' + contentBoxIndex);
+        var oldDot = document.getElementById('link-dot-' + contentBoxIndex);
+
+        if(swipedir == 'up' || swipedir == 'left') {
+            if(contentBoxIndex < 5) {
+                contentBoxIndex++;
+            }
+        } else if(swipedir == 'down' || swipedir == 'right') {
+            if(contentBoxIndex > 0) {
+                contentBoxIndex--;
+            }
+        }
+
+        animationDuration = 53;
+        var newDiv = document.getElementById('link-' + contentBoxIndex);
+        var newDot = document.getElementById('link-dot-' + contentBoxIndex);
+        oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
+        oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
+        oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
+        newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
+        newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
+        newDot.style.color = 'rgba(66, 66, 66, 1.0)';
+
+        printDebug(swipedir);
+        printDebug(contentBoxIndex);
+    })
 
     allDiv.onmousemove = function(ev) {
-        /*var x = 0;
-        var y = 0;
-
-        var x = ev.clientX / CANVAS_WIDTH;
+        /*var x = ev.clientX / CANVAS_WIDTH;
         var y = ev.clientY / CANVAS_HEIGHT;
 
-        x *= CAMERA_MOVEMENT_FACTOR;
-        y *= CAMERA_MOVEMENT_FACTOR;
-
-        if(x != null && y != null) {
-            rotateCameraAbsolut(y, x, 0.0);
-        }*/
-        animationDuration += 1;
-    }
-
-    allDiv.ontouchmove = function() {
-        animationDuration += 1;
+        fitCamRotToPos(x, y);*/
     }
 
     allDiv.onwheel = function(ev) {
         rotate += ROTATION_FACTOR * 100;
         var oldDiv = document.getElementById('link-' + contentBoxIndex);
+        var oldDot = document.getElementById('link-dot-' + contentBoxIndex);
 
         if(ev.deltaY < 0) {
             if(contentBoxIndex > 0) {
                 contentBoxIndex--;
-
             }
         }
         if(ev.deltaY > 0) {
@@ -444,10 +528,13 @@ function initMouseMoveHandler() {
         }
         animationDuration = 53;
         var newDiv = document.getElementById('link-' + contentBoxIndex);
+        var newDot = document.getElementById('link-dot-' + contentBoxIndex);
         oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
         oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
+        oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
         newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
         newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
+        newDot.style.color = 'rgba(66, 66, 66, 1.0)';
 
         printDebug(contentBoxIndex);
     }
