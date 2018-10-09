@@ -97,19 +97,25 @@ var rotate = 0;
 var then = 0;
 var deltaTime = 0;
 
+var animationDuration = 1;
+
 function render(now) {
-    now *= 1.001;  //convert to seconds
-    deltaTime = now - then;
-    then = now;
+    if(animationDuration > 0) {
+        animationDuration--;
+        now *= 1.001;  //convert to seconds
+        deltaTime = now - then;
+        then = now;
 
-    ppFrameBuffer.drawToBuffer(true);
-    renderGeometry();
-    ppFrameBuffer.drawToBuffer(false);
-    renderFrame();
+        ppFrameBuffer.drawToBuffer(true);
+        renderGeometry();
+        ppFrameBuffer.drawToBuffer(false);
+        renderFrame();
 
-    rotate += Math.sin(now * 0.01) * 0.25;
+        rotate += Math.sin(now * 0.01) * 0.25;
 
-    rotateCameraAbsolut(Math.cos(rotate*-0.01), Math.sin(rotate*0.05), Math.sin(rotate*-0.005));
+        rotateCameraAbsolut(Math.cos(rotate*-0.01), Math.sin(rotate*0.05), Math.sin(rotate*-0.005));
+        rotate += ROTATION_FACTOR * 50;
+    }
 
     requestAnimationFrame(render);
 }
@@ -252,6 +258,7 @@ function fitCanvasInWindow() {
     CANVAS_HEIGHT = gl.canvas.height;
     aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
     gl.viewport(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    animationDuration += 1;
 }
 
 var indices = [];
@@ -398,7 +405,6 @@ function getCameraInitMatTrans() {
 function initMouseMoveHandler() {
 
     var allDiv = document.getElementById('all');
-    var contentBoxDiv = document.getElementById('content-box');
     var contentBoxIndex = 0;
 
     allDiv.onmousemove = function(ev) {
@@ -414,18 +420,21 @@ function initMouseMoveHandler() {
         if(x != null && y != null) {
             rotateCameraAbsolut(y, x, 0.0);
         }*/
-        rotate += ROTATION_FACTOR * 50;
+        animationDuration += 1;
     }
 
     allDiv.ontouchmove = function() {
-        rotate += ROTATION_FACTOR * 50;
+        animationDuration += 1;
     }
 
     allDiv.onwheel = function(ev) {
         rotate += ROTATION_FACTOR * 100;
+        var oldDiv = document.getElementById('link-' + contentBoxIndex);
+
         if(ev.deltaY < 0) {
             if(contentBoxIndex > 0) {
                 contentBoxIndex--;
+
             }
         }
         if(ev.deltaY > 0) {
@@ -433,12 +442,18 @@ function initMouseMoveHandler() {
                 contentBoxIndex++;
             } 
         }
-        contentBoxDiv.style.transform = 'translate(0px, -' + contentBoxIndex*550 + 'px)';
+        animationDuration = 53;
+        var newDiv = document.getElementById('link-' + contentBoxIndex);
+        oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
+        oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
+        newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
+        newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
+
         printDebug(contentBoxIndex);
     }
 }
 
 function resized() {
     fitCanvasInWindow();
-    setUpRenderTexture();
+    ppFrameBuffer.setUpRenderTexture();
 }
