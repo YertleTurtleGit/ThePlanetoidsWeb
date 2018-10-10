@@ -469,17 +469,34 @@ function swipedetect(el, callback){
     }, false)
 }
 
+function rotatePlanets(rotationValue) {
+    animationDuration = rotationValue / 2;
+    rotate += ROTATION_FACTOR * rotationValue;
+}
+
+function changeMenuItem(newIndex, oldIndex) {
+    var oldDiv = document.getElementById('link-' + oldIndex);
+    var oldDot = document.getElementById('link-dot-' + oldIndex);
+    var newDiv = document.getElementById('link-' + newIndex);
+    var newDot = document.getElementById('link-dot-' + newIndex);
+    
+    oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
+    oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
+    oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
+    newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
+    newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
+    newDot.style.color = 'rgba(66, 66, 66, 1.0)';
+
+    printDebug('new: ' + newIndex + '/old: ' + oldIndex);
+}
+
 function initMouseMoveHandler() {
 
     var allDiv = document.getElementById('all');
     var contentBoxIndex = 0;
-    var yTouchStart;
 
     swipedetect(allDiv, function(swipedir) {
-        rotate += ROTATION_FACTOR * 100;
-        var oldDiv = document.getElementById('link-' + contentBoxIndex);
-        var oldDot = document.getElementById('link-dot-' + contentBoxIndex);
-
+        var oldIndex = contentBoxIndex;        
         if(swipedir == 'up' || swipedir == 'left') {
             if(contentBoxIndex < 5) {
                 contentBoxIndex++;
@@ -489,19 +506,9 @@ function initMouseMoveHandler() {
                 contentBoxIndex--;
             }
         }
-
-        animationDuration = 53;
-        var newDiv = document.getElementById('link-' + contentBoxIndex);
-        var newDot = document.getElementById('link-dot-' + contentBoxIndex);
-        oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
-        oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
-        oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
-        newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
-        newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
-        newDot.style.color = 'rgba(66, 66, 66, 1.0)';
-
-        printDebug(swipedir);
-        printDebug(contentBoxIndex);
+        var newIndex = contentBoxIndex;
+        changeMenuItem(newIndex, oldIndex);
+        rotatePlanets(100);        
     })
 
     allDiv.onmousemove = function(ev) {
@@ -512,10 +519,7 @@ function initMouseMoveHandler() {
     }
 
     allDiv.onwheel = function(ev) {
-        rotate += ROTATION_FACTOR * 100;
-        var oldDiv = document.getElementById('link-' + contentBoxIndex);
-        var oldDot = document.getElementById('link-dot-' + contentBoxIndex);
-
+        var oldIndex = contentBoxIndex;
         if(ev.deltaY < 0) {
             if(contentBoxIndex > 0) {
                 contentBoxIndex--;
@@ -526,17 +530,9 @@ function initMouseMoveHandler() {
                 contentBoxIndex++;
             } 
         }
-        animationDuration = 53;
-        var newDiv = document.getElementById('link-' + contentBoxIndex);
-        var newDot = document.getElementById('link-dot-' + contentBoxIndex);
-        oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
-        oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
-        oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
-        newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
-        newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
-        newDot.style.color = 'rgba(66, 66, 66, 1.0)';
-
-        printDebug(contentBoxIndex);
+        var newIndex = contentBoxIndex;
+        changeMenuItem(newIndex, oldIndex);
+        rotatePlanets(100);
     }
 }
 
