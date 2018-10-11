@@ -97,11 +97,12 @@ var rotate = 0;
 var cameraRotate = 0;
 var then = 0;
 var deltaTime = 0;
+
 var camRelRotX = 0;
 var camRelRotY = 0;
 var camRelRotZ = 0;
 
-var animationDuration = 1;
+var animationDuration = -1000;
 
 function render(now) {
 
@@ -114,14 +115,18 @@ function render(now) {
     ppFrameBuffer.drawToBuffer(false);
     renderFrame();
 
-    if(animationDuration > 0) {
-        animationDuration--;
-        rotate += ROTATION_FACTOR * 63;
+    if(5 >= animationDuration && animationDuration >= -5) {
+        rotate += (Math.sin(now * 0.01) * 0.025) * deltaTime;
+        animationDuration = 0;
+    } else if(animationDuration > 0){
+        animationDuration -= deltaTime;
+        rotate += ROTATION_FACTOR * deltaTime * animationDuration * 0.0025;
+    } else if(animationDuration < 0) {
+        animationDuration += deltaTime;
+        rotate -= ROTATION_FACTOR * deltaTime * animationDuration * 0.0025;
     }
 
-    rotate += Math.sin(now * 0.01) * 0.25;
-    rotateCameraAbsolut(Math.cos(rotate*-0.01) + camRelRotX, Math.sin(rotate*0.05) + camRelRotY, Math.sin(rotate*-0.005) + camRelRotZ);
-
+    rotateCameraAbsolut(camRelRotX, camRelRotY, camRelRotZ);
     requestAnimationFrame(render);
 }
 
@@ -380,12 +385,6 @@ function rotateCameraAbsolut(rotX, rotY, rotZ) {
     cameraMat.zRotate(toRadians(rotZ));
 }
 
-function rotateCameraRelative(rotX, rotY, rotZ) {
-    camRelRotX = rotX;
-    camRelRotY = rotY;
-    camRelRotZ = rotZ;
-}
-
 function setUpCamera() {
     cameraMat.set(getCameraInitMatRot());
     cameraMat.multiply(getCameraInitMatTrans());
@@ -411,15 +410,6 @@ function getCameraInitMatTrans() {
         newCameraMat.translate(0.0, 0.0, 7.0);
     }
     return newCameraMat.get();
-}
-
-function fitCamRotToPos(x,y) {
-    x *= CAMERA_MOVEMENT_FACTOR;
-    y *= CAMERA_MOVEMENT_FACTOR;
-
-    if(x != null && y != null) {
-        rotateCameraRelative(y, x, 0.0);
-    }
 }
 
 function swipedetect(el, callback){
@@ -470,52 +460,65 @@ function swipedetect(el, callback){
 }
 
 function rotatePlanets(rotationValue) {
-    animationDuration = rotationValue / 2;
-    rotate += ROTATION_FACTOR * rotationValue;
+    animationDuration = rotationValue;
 }
 
-function changeMenuItem(newIndex, oldIndex) {
-    var oldDiv = document.getElementById('link-' + oldIndex);
-    var oldDot = document.getElementById('link-dot-' + oldIndex);
-    var newDiv = document.getElementById('link-' + newIndex);
-    var newDot = document.getElementById('link-dot-' + newIndex);
-    
-    oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
-    oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
-    oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
-    newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
-    newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
-    newDot.style.color = 'rgba(66, 66, 66, 1.0)';
+var lastMenuItemChanged = 0;
+var contentBoxIndex = 0;
 
-    printDebug('new: ' + newIndex + '/old: ' + oldIndex);
+function changeMenuItem(newIndex, oldIndex) {
+    var itemChangeThreshhold = 150;
+    var now = new Date().getTime();
+
+    if(lastMenuItemChanged + itemChangeThreshhold < now) {
+        var oldDiv = document.getElementById('link-' + oldIndex);
+        var oldDot = document.getElementById('link-dot-' + oldIndex);
+        var newDiv = document.getElementById('link-' + newIndex);
+        var newDot = document.getElementById('link-dot-' + newIndex);
+        
+        oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
+        oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
+        oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
+        newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
+        newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
+        newDot.style.color = 'rgba(66, 66, 66, 1.0)';
+        lastMenuItemChanged = now;
+    } else {
+        contentBoxIndex = oldIndex;
+    }
 }
 
 function initMouseMoveHandler() {
 
     var allDiv = document.getElementById('all');
-    var contentBoxIndex = 0;
+    var maxIndex = 5;
 
     swipedetect(allDiv, function(swipedir) {
         var oldIndex = contentBoxIndex;        
         if(swipedir == 'up' || swipedir == 'left') {
-            if(contentBoxIndex < 5) {
+            if(contentBoxIndex < maxIndex) {
                 contentBoxIndex++;
+            } else if(contentBoxIndex == maxIndex) {
+                contentBoxIndex = 0;
             }
         } else if(swipedir == 'down' || swipedir == 'right') {
             if(contentBoxIndex > 0) {
                 contentBoxIndex--;
+            } else if(contentBoxIndex == 0) {
+                contentBoxIndex = maxIndex;
             }
         }
         var newIndex = contentBoxIndex;
         changeMenuItem(newIndex, oldIndex);
-        rotatePlanets(100);        
+        rotatePlanets((newIndex-oldIndex) * 500);        
     })
 
     allDiv.onmousemove = function(ev) {
-        /*var x = ev.clientX / CANVAS_WIDTH;
+        var x = ev.clientX / CANVAS_WIDTH;
         var y = ev.clientY / CANVAS_HEIGHT;
-
-        fitCamRotToPos(x, y);*/
+        camRelRotX = (y-1.0)*(-2);
+        camRelRotY = (x-1.0)*(-2);
+        camRelRotZ = 0.0;
     }
 
     allDiv.onwheel = function(ev) {
@@ -523,16 +526,20 @@ function initMouseMoveHandler() {
         if(ev.deltaY < 0) {
             if(contentBoxIndex > 0) {
                 contentBoxIndex--;
+            } else if(contentBoxIndex == 0) {
+                contentBoxIndex = maxIndex;
             }
         }
         if(ev.deltaY > 0) {
-            if(contentBoxIndex < 5) {
+            if(contentBoxIndex < maxIndex) {
                 contentBoxIndex++;
-            } 
+            } else if(contentBoxIndex == maxIndex) {
+                contentBoxIndex = 0;
+            }
         }
         var newIndex = contentBoxIndex;
         changeMenuItem(newIndex, oldIndex);
-        rotatePlanets(100);
+        rotatePlanets((newIndex-oldIndex) * 500);
     }
 }
 

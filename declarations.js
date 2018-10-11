@@ -12,7 +12,7 @@ const USHORT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 
 var OBJECT_SCALE = 1.5;
 //const SPACE_SCALE = 1.0;
-const ROTATION_FACTOR = 0.04;
+const ROTATION_FACTOR = 0.15;
 
 const MODEL_COUNT = 4;
 const SUN_INDEX = 0;
