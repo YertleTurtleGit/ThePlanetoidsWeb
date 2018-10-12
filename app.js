@@ -13,6 +13,7 @@ var mainShaderProgram;
 var postShaderProgram;
 
 function init() {
+    printDebug('DEBUG MODE IS ON');
     gl = GlContext.getContext('surface');
     printDebug('initializing canvas...')
     fitCanvasInWindow();
@@ -441,7 +442,7 @@ function swipedetect(el, callback){
         e.preventDefault() // prevent scrolling when inside DIV
     }, false)
   
-    touchsurface.addEventListener('touchend', function(e){
+    touchsurface.addEventListener('touchend', function(e) {
         var touchobj = e.changedTouches[0]
         distX = touchobj.pageX - startX // get horizontal dist traveled by finger while in contact with surface
         distY = touchobj.pageY - startY // get vertical dist traveled by finger while in contact with surface
@@ -479,6 +480,8 @@ function changeMenuItem(newIndex, oldIndex) {
         oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
         oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
         oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
+        oldDiv.style.zIndex = -1;
+        newDiv.style.zIndex = 999;
         newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
         newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
         newDot.style.color = 'rgba(66, 66, 66, 1.0)';
@@ -491,7 +494,7 @@ function changeMenuItem(newIndex, oldIndex) {
 function initMouseMoveHandler() {
 
     var allDiv = document.getElementById('all');
-    var maxIndex = 5;
+    const maxIndex = 5;
 
     swipedetect(allDiv, function(swipedir) {
         var oldIndex = contentBoxIndex;        
@@ -509,8 +512,8 @@ function initMouseMoveHandler() {
             }
         }
         var newIndex = contentBoxIndex;
-        changeMenuItem(newIndex, oldIndex);
-        rotatePlanets((newIndex-oldIndex) * 500);        
+        rotatePlanets(750);
+        changeMenuItem(newIndex, oldIndex);        
     })
 
     allDiv.onmousemove = function(ev) {
@@ -538,8 +541,8 @@ function initMouseMoveHandler() {
             }
         }
         var newIndex = contentBoxIndex;
+        rotatePlanets(750);
         changeMenuItem(newIndex, oldIndex);
-        rotatePlanets((newIndex-oldIndex) * 500);
     }
 }
 

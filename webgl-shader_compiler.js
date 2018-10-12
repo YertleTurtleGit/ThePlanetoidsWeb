@@ -14,12 +14,12 @@ class GlShaderCompiler {
         }
     }
 
-    compileShaderPair(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE) {
+    compileShaderPair(vertexShaderSource, fragmentShaderSource) {
         var vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
         var fragmentShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
     
-        this.gl.shaderSource(vertexShader, VERTEX_SHADER_SOURCE);
-        this.gl.shaderSource(fragmentShader, FRAGMENT_SHADER_SOURCE);
+        this.gl.shaderSource(vertexShader, vertexShaderSource);
+        this.gl.shaderSource(fragmentShader, fragmentShaderSource);
     
         this.compileShader(vertexShader);
         this.compileShader(fragmentShader);
