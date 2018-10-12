@@ -102,7 +102,7 @@ var camRelRotX = 0;
 var camRelRotY = 0;
 var camRelRotZ = 0;
 
-var animationDuration = -1000;
+var animationDuration = 0;
 
 function render(now) {
 

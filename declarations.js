@@ -40,7 +40,7 @@ const vec4EARTH_COLOR = [0.1, 0.1, 0.1, 1.0];
 const vec4PLANETX_COLOR = [0.09, 0.09, 0.09, 1.0];
 const vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
 
-const BACKGROUND_COLOR = [0.005, 0.005, 0.005, 1.0];
+const BACKGROUND_COLOR = [0.2, 0.2, 0.2, 1.0];
 
 const CAMERA_MOVEMENT_FACTOR = -3.0;
 
@@ -188,13 +188,14 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE =
 
         'vec4 fragColor;',
 
-        'float random (vec2 st) {',
-            'return fract(sin(dot(st.xy, vec2(12.9898,78.233)))*43758.5453123);',
-        '}',
+        'const vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
+        'const vec4 black = vec4(0.0, 0.0, 0.0, 1.0);',
+        'const vec4 grey = vec4(0.5, 0.5, 0.5, 1.0);',
+        'const vec2 center = vec2(0.5, 0.5);',
 
         'void main() {',
-            'vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
-            'vec4 black = vec4(0.5, 0.5, 0.5, 1.0);',
+            'vec4 mixColor;',
+
             'fragColor = texture2D(frameBufferTextureSampler, uv);',
 
             'lowp vec4 sum = vec4(0.0);',
@@ -205,14 +206,15 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE =
             'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
             'fragColor += sum;',
             
-            'if(rand-(0.3*rand) <= uv.y) {',
-                'if(uv.y <= rand+(0.3*rand)) {',
-                    'fragColor = mix(texture2D(frameBufferTextureSampler, vec2(uv.x+0.006, uv.y)), black, 0.1 * rand);',
-                '}',
+            'if(sin(uv.y * 400.0 - rand) > 0.0) {',
+                'mixColor = white;',
+            '} else {',
+                'mixColor = grey;',
             '}',
 
-            'float grain = random(uv.xy/vec2(rand, rand));',
-            'fragColor = mix(fragColor, vec4(grain, grain, grain, 1.0), 0.15 + (rand * 0.003));',
-            'gl_FragColor = fragColor;',
+            'float relativeDistanceToCenter = distance(uv, center);',
+            'fragColor = mix(fragColor, black, relativeDistanceToCenter+0.25);',
+
+            'gl_FragColor = mix(fragColor, mixColor, 0.15);',
         '}'
         ].join('\n');
