@@ -14,8 +14,8 @@ var postShaderProgram;
 
 function init() {
     printDebug('DEBUG MODE IS ON');
+    printDebug('initializing canvas...');
     gl = GlContext.getContext('surface');
-    printDebug('initializing canvas...')
     fitCanvasInWindow();
     let shaderCompiler = new GlShaderCompiler(gl);
     vaoExt = (
@@ -162,6 +162,7 @@ function renderGeometry() {
 
 var rand = 0.5;
 var randCount = 0;
+var randCountMax = 500;
 
 function renderFrame() {
     gl.useProgram(postShaderProgram);
@@ -169,14 +170,16 @@ function renderFrame() {
 
     //var rand = (Math.sin(rotate * 0.005)) * 0.3;
 
-    if(randCount > 1500) {
-        rand = Math.random();
+    if(randCount < randCountMax) {
+        rand += randCount / 375;
+    } else if(randCount < randCountMax * 2) {
+        rand -= randCount / 725;
+    } else if (randCount >= randCountMax * 2) {
         randCount = 0;
-    } else {
-        rand += randCount / 725;
+        rand = Math.random();
     }
-    randCount += deltaTime;
-
+    randCount += 1;
+ 
     frameRandUniform.setValue(rand);
     frameBufferTextureSamplerUniform.setValue(0);
 
