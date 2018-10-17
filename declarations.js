@@ -4,8 +4,8 @@ const DEBUG_MODE = true;
 
 const DIRTY_SCALING_FACTOR = 2; //1 means no scaling
 
-const VERTICES_COUNT_OF_SPHERE = 32*32
-const INDICE_COUNT_OF_SPHERE = 32*32*6
+const VERTICES_COUNT_OF_SPHERE = 32 * 32
+const INDICE_COUNT_OF_SPHERE = 32 * 32 * 6
 
 const FLOAT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 const USHORT_SIZE = Float32Array.BYTES_PER_ELEMENT;
@@ -45,176 +45,176 @@ const BACKGROUND_COLOR = [0.2, 0.2, 0.2, 1.0];
 const CAMERA_MOVEMENT_FACTOR = -3.0;
 
 const vec3MODEL_POSITIONS = [vec3SUN_POSITION,
-                           vec3EARTH_POSITION,
-                           vec3PLANETX_POSITION,
-                           vec3MOON_POSITION];
+    vec3EARTH_POSITION,
+    vec3PLANETX_POSITION,
+    vec3MOON_POSITION
+];
 
 const fMODEL_SCALES = [SUN_SCALE,
-                     EARTH_SCALE,
-                     PLANETX_SCALE,
-                     MOON_SCALE];
+    EARTH_SCALE,
+    PLANETX_SCALE,
+    MOON_SCALE
+];
 
 const fMODEL_SPEEDS = [SUN_SPEED,
-                     EARTH_SPEED,
-                     PLANETX_SPEED,
-                     MOON_SPEED];
+    EARTH_SPEED,
+    PLANETX_SPEED,
+    MOON_SPEED
+];
 
 const vec4MODEL_COLORS = [vec4SUN_COLOR,
-                        vec4EARTH_COLOR,
-                        vec4PLANETX_COLOR,
-                        vec4MOON_COLOR];
+    vec4EARTH_COLOR,
+    vec4PLANETX_COLOR,
+    vec4MOON_COLOR
+];
 
-const VERTEX_SHADER_SOURCE =
-        [
-        '#version 100',
+const VERTEX_SHADER_SOURCE = [
+    '#version 100',
 
-        'attribute vec3 inputPosition;',
-        'attribute vec2 inputTexCoord;',
-        'attribute vec3 inputNormal;',
-        
-        'uniform mat4 modelview, normalMat, modelviewProjection;',
-        'uniform vec4 inputColor;',
+    'attribute vec3 inputPosition;',
+    'attribute vec2 inputTexCoord;',
+    'attribute vec3 inputNormal;',
 
-        'uniform float rand;',
-        
-        'varying vec3 normalInterp;',
-        'varying vec3 vertPos;',
-        'varying vec4 vertColor;',
+    'uniform mat4 modelview, normalMat, modelviewProjection;',
+    'uniform vec4 inputColor;',
 
-        'varying vec2 uv;',
+    'uniform float rand;',
 
-        'void main(){',
-            'gl_Position = modelviewProjection * vec4(inputPosition, 1.0);',
-            'vec4 vertPos4 = modelviewProjection * vec4(inputPosition, 1.0);',
-            'vertPos = vertPos4.xyz / vertPos4.w;',
-            'normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));',
-            'vertColor = inputColor;',
-            'uv = inputTexCoord;',
-        '}'    
-        ].join('\n');
+    'varying vec3 normalInterp;',
+    'varying vec3 vertPos;',
+    'varying vec4 vertColor;',
 
-const FRAGMENT_SHADER_SOURCE =
-        [
-        '#version 100',
+    'varying vec2 uv;',
 
-        'precision mediump float;',
+    'void main(){',
+    'gl_Position = modelviewProjection * vec4(inputPosition, 1.0);',
+    'vec4 vertPos4 = modelviewProjection * vec4(inputPosition, 1.0);',
+    'vertPos = vertPos4.xyz / vertPos4.w;',
+    'normalInterp = vec3(normalMat * vec4(inputNormal, 0.0));',
+    'vertColor = inputColor;',
+    'uv = inputTexCoord;',
+    '}'
+].join('\n');
 
-        'varying vec3 vertPos;',
-        'varying vec3 normalInterp;',
-        'varying vec4 vertColor;',
+const FRAGMENT_SHADER_SOURCE = [
+    '#version 100',
 
-        'varying vec2 uv;',
+    'precision mediump float;',
 
-        'uniform sampler2D frameBufferTextureSampler;',
+    'varying vec3 vertPos;',
+    'varying vec3 normalInterp;',
+    'varying vec4 vertColor;',
 
-        'const float lightPower = 7.85;',
-        'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
-        'const vec3 lightPos = vec3(0.0, 0.0, 0.0);',
-        'const vec3 ambientColor = vec3(0.1, 0.1, 0.1);',
-        'const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);',
-        'const vec3 specColor = vec3(1.0, 1.0, 1.0);',
-        'const float shininess = 16.0;',
-        'const float screenGamma = 2.2;',
+    'varying vec2 uv;',
 
-        'vec4 fragColor;',
+    'uniform sampler2D frameBufferTextureSampler;',
 
-        'void main() {',
+    'const float lightPower = 7.85;',
+    'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
+    'const vec3 lightPos = vec3(0.0, 0.0, 0.0);',
+    'const vec3 ambientColor = vec3(0.1, 0.1, 0.1);',
+    'const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);',
+    'const vec3 specColor = vec3(1.0, 1.0, 1.0);',
+    'const float shininess = 16.0;',
+    'const float screenGamma = 2.2;',
 
-            'vec3 normal = normalize(normalInterp);',
-            'vec3 lightDir = normalize(lightPos - vertPos);',
-            'float distance = length(lightDir);',
+    'vec4 fragColor;',
 
-            'float lambertian = max(dot(lightDir, normal), 0.0);',
-            'float specular = 0.0;',
+    'void main() {',
 
-            'if(lambertian > 0.0) {',
-                'vec3 viewDir = normalize(-vertPos);',
+    'vec3 normal = normalize(normalInterp);',
+    'vec3 lightDir = normalize(lightPos - vertPos);',
+    'float distance = length(lightDir);',
 
-                'vec3 halfDir = normalize(lightDir + viewDir);',
-                'float specAngle = max(dot(halfDir, normal), 0.0);',
-                'specular = pow(specAngle, shininess);',
-            '}',
+    'float lambertian = max(dot(lightDir, normal), 0.0);',
+    'float specular = 0.0;',
 
-            'vec3 colorLinear = ambientColor +',
-                                'lambertian * diffuseColor * lightColor * lightPower / distance +',
-                                'specular * specColor * lightColor * lightPower / distance;',
+    'if(lambertian > 0.0) {',
+    'vec3 viewDir = normalize(-vertPos);',
 
-            'colorLinear -= lightColor * lightPower * distance * 0.023;',
-            'colorLinear += mix(colorLinear, vertColor.rgb, 0.9);',
+    'vec3 halfDir = normalize(lightDir + viewDir);',
+    'float specAngle = max(dot(halfDir, normal), 0.0);',
+    'specular = pow(specAngle, shininess);',
+    '}',
 
-            'float alpha = 1.0;',
+    'vec3 colorLinear = ambientColor +',
+    'lambertian * diffuseColor * lightColor * lightPower / distance +',
+    'specular * specColor * lightColor * lightPower / distance;',
 
-            'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
+    'colorLinear -= lightColor * lightPower * distance * 0.023;',
+    'colorLinear += mix(colorLinear, vertColor.rgb, 0.9);',
 
-            'fragColor = vec4(colorGamma, alpha);',
-            'gl_FragColor = fragColor;',     
-        '}'
-        ].join('\n');
+    'float alpha = 1.0;',
 
-const VERTEX_SHADER_POST_PROCESSING_SOURCE =
-        [
-        '#version 100',
+    'vec3 colorGamma = pow(colorLinear, vec3(1.0/screenGamma));',
 
-        'attribute vec2 inputPosition;',
-        'attribute vec2 inputTexCoord;',
+    'fragColor = vec4(colorGamma, alpha);',
+    'gl_FragColor = fragColor;',
+    '}'
+].join('\n');
 
-        'varying vec2 uv;',
-        'varying vec2 blurCoords[5];',
+const VERTEX_SHADER_POST_PROCESSING_SOURCE = [
+    '#version 100',
 
-        'void main(){',
-            'gl_Position = vec4(inputPosition, 0.0, 1.0);',
-            'uv = inputTexCoord;',
+    'attribute vec2 inputPosition;',
+    'attribute vec2 inputTexCoord;',
 
-            'vec2 singleStepOffset = vec2(0.002, 0.002);',
-            'blurCoords[0] = inputTexCoord.xy;',
-            'blurCoords[1] = inputTexCoord.xy + singleStepOffset * 1.407333;',
-            'blurCoords[2] = inputTexCoord.xy - singleStepOffset * 1.407333;',
-            'blurCoords[3] = inputTexCoord.xy + singleStepOffset * 3.294215;',
-            'blurCoords[4] = inputTexCoord.xy - singleStepOffset * 3.294215;',
-        '}'    
-        ].join('\n');
+    'varying vec2 uv;',
+    'varying vec2 blurCoords[5];',
 
-const FRAGMENT_SHADER_POST_PROCESSING_SOURCE =
-        [
-        '#version 100',
+    'void main(){',
+    'gl_Position = vec4(inputPosition, 0.0, 1.0);',
+    'uv = inputTexCoord;',
 
-        'precision mediump float;',
+    'vec2 singleStepOffset = vec2(0.002, 0.002);',
+    'blurCoords[0] = inputTexCoord.xy;',
+    'blurCoords[1] = inputTexCoord.xy + singleStepOffset * 1.407333;',
+    'blurCoords[2] = inputTexCoord.xy - singleStepOffset * 1.407333;',
+    'blurCoords[3] = inputTexCoord.xy + singleStepOffset * 3.294215;',
+    'blurCoords[4] = inputTexCoord.xy - singleStepOffset * 3.294215;',
+    '}'
+].join('\n');
 
-        'varying vec2 uv;',
-        'varying vec2 blurCoords[5];',
-        'uniform float rand;',
+const FRAGMENT_SHADER_POST_PROCESSING_SOURCE = [
+    '#version 100',
 
-        'uniform sampler2D frameBufferTextureSampler;',
+    'precision mediump float;',
 
-        'vec4 fragColor;',
+    'varying vec2 uv;',
+    'varying vec2 blurCoords[5];',
+    'uniform float rand;',
 
-        'const vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
-        'const vec4 black = vec4(0.0, 0.0, 0.0, 1.0);',
-        'const vec4 grey = vec4(0.5, 0.5, 0.5, 1.0);',
-        'const vec2 center = vec2(0.5, 0.5);',
+    'uniform sampler2D frameBufferTextureSampler;',
 
-        'void main() {',
-            'vec4 mixColor;',
+    'vec4 fragColor;',
 
-            'fragColor = texture2D(frameBufferTextureSampler, uv);',
+    'const vec4 white = vec4(1.0, 1.0, 1.0, 1.0);',
+    'const vec4 black = vec4(0.0, 0.0, 0.0, 1.0);',
+    'const vec4 grey = vec4(0.5, 0.5, 0.5, 1.0);',
+    'const vec2 center = vec2(0.5, 0.5);',
 
-            'lowp vec4 sum = vec4(0.0);',
-            'sum += texture2D(frameBufferTextureSampler, blurCoords[0]) * 0.204164;',
-            'sum += texture2D(frameBufferTextureSampler, blurCoords[1]) * 0.304005;',
-            'sum += texture2D(frameBufferTextureSampler, blurCoords[2]) * 0.304005;',
-            'sum += texture2D(frameBufferTextureSampler, blurCoords[3]) * 0.093913;',
-            'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
-            'fragColor += sum;',
-            
-            'if(sin(uv.y * 400.0 - rand) > 0.0) {',
-                'mixColor = white;',
-            '} else {',
-                'mixColor = grey;',
-            '}',
+    'void main() {',
+    'vec4 mixColor;',
 
-            'float relativeDistanceToCenter = distance(uv, center);',
-            'fragColor = mix(fragColor, black, relativeDistanceToCenter+0.25);',
+    'fragColor = texture2D(frameBufferTextureSampler, uv);',
 
-            'gl_FragColor = mix(fragColor, mixColor, 0.15);',
-        '}'
-        ].join('\n');
+    'lowp vec4 sum = vec4(0.0);',
+    'sum += texture2D(frameBufferTextureSampler, blurCoords[0]) * 0.204164;',
+    'sum += texture2D(frameBufferTextureSampler, blurCoords[1]) * 0.304005;',
+    'sum += texture2D(frameBufferTextureSampler, blurCoords[2]) * 0.304005;',
+    'sum += texture2D(frameBufferTextureSampler, blurCoords[3]) * 0.093913;',
+    'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
+    'fragColor += sum;',
+
+    'if(sin(uv.y * 400.0 - rand) > 0.0) {',
+    'mixColor = white;',
+    '} else {',
+    'mixColor = grey;',
+    '}',
+
+    'float relativeDistanceToCenter = distance(uv, center);',
+    'fragColor = mix(fragColor, black, relativeDistanceToCenter+0.25);',
+
+    'gl_FragColor = mix(fragColor, mixColor, 0.15);',
+    '}'
+].join('\n');

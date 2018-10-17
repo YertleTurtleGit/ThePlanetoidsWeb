@@ -9,8 +9,8 @@ class GlContext {
         var webglContext;
 
         var index = 0;
-        while(!webglContext) {
-            if(index > WEBGL_CONTEXT_NAMES.length) {
+        while (!webglContext) {
+            if (index > WEBGL_CONTEXT_NAMES.length) {
                 WEBGL_USED_CONTEXT = null;
                 return null;
             }
