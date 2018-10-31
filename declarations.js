@@ -4,15 +4,17 @@ const DEBUG_MODE = true;
 
 const DIRTY_SCALING_FACTOR = 2; //1 means no scaling
 
-const VERTICES_COUNT_OF_SPHERE = 32 * 32
-const INDICE_COUNT_OF_SPHERE = 32 * 32 * 6
+const CANVAS_ID = 'surface'
+
+const VERTICES_COUNT_OF_SPHERE = 32 * 32 + 416;
+const INDICE_COUNT_OF_SPHERE = 32 * 32 * 6;
 
 const FLOAT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 const USHORT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 
 var OBJECT_SCALE = 1.5;
 //const SPACE_SCALE = 1.0;
-const ROTATION_FACTOR = 0.15;
+const ROTATION_FACTOR = 0.0004;
 
 const MODEL_COUNT = 4;
 const SUN_INDEX = 0;
@@ -35,12 +37,12 @@ const EARTH_SPEED = 1.0;
 const PLANETX_SPEED = 1.2;
 const MOON_SPEED = 2.0;
 
-const vec4SUN_COLOR = [1.0, 1.0, 1.0, 1.0];
+const vec4SUN_COLOR = [0.815, 0.18, 0.153, 1.0];
 const vec4EARTH_COLOR = [0.1, 0.1, 0.1, 1.0];
 const vec4PLANETX_COLOR = [0.09, 0.09, 0.09, 1.0];
 const vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
 
-const BACKGROUND_COLOR = [0.2, 0.2, 0.2, 1.0];
+const BACKGROUND_COLOR = [0.115, 0.2, 0.2, 1.0];
 
 const CAMERA_MOVEMENT_FACTOR = -3.0;
 
@@ -110,12 +112,12 @@ const FRAGMENT_SHADER_SOURCE = [
     'uniform sampler2D frameBufferTextureSampler;',
 
     'const float lightPower = 7.85;',
-    'const vec3 lightColor = vec3(1.0, 1.0, 1.0);',
+    'const vec3 lightColor = vec3(0.815, 0.18, 0.153);',
     'const vec3 lightPos = vec3(0.0, 0.0, 0.0);',
     'const vec3 ambientColor = vec3(0.1, 0.1, 0.1);',
     'const vec3 diffuseColor = vec3(0.25, 0.25, 0.25);',
     'const vec3 specColor = vec3(1.0, 1.0, 1.0);',
-    'const float shininess = 16.0;',
+    'const float shininess = 8.0;',
     'const float screenGamma = 2.2;',
 
     'vec4 fragColor;',
@@ -206,11 +208,13 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE = [
     'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
     'fragColor += sum;',
 
-    'if(sin(uv.y * 400.0 - rand) > 0.0) {',
+    /*'if(sin(uv.y * 400.0 - rand) > 0.0) {',
     'mixColor = white;',
     '} else {',
     'mixColor = grey;',
-    '}',
+    '}',*/
+
+    'mixColor = vec4(sin(uv.y * 250.0 - rand) *0.5 +0.15);',
 
     'float relativeDistanceToCenter = distance(uv, center);',
     'fragColor = mix(fragColor, black, relativeDistanceToCenter+0.25);',

@@ -1,15 +1,15 @@
 body {
+    font-family: 'Norwester', Arial, Helvetica, sans-serif;
+    src: url(norwester.otf);
     border: 0;
     background-color: black;
     color: white;
 }
 
 .link {
-    font-family: Arial, Helvetica, sans-serif;
     font-size: 4rem;
-    font-style: oblique;
     text-transform: uppercase;
-    color: rgba(128, 128, 128, 0.0);
+    color: transparent;
     text-shadow: 2px 2px rgba(0, 0, 0, 0.0);
     height: 100px;
     padding: 0px;
@@ -25,29 +25,26 @@ body {
 }
 
 .link-dot {
-    font-family: Arial, Helvetica, sans-serif;
     font-size: 4rem;
-    font-style: oblique;
-    color: rgba(128, 128, 128, 1.0);
+    color: white;
     text-shadow: 2px 2px rgba(0, 0, 0, 1.0);
     transition: all 1s;
-    width: 3%;
+    width: 16.6%;
     float: left;
 }
 
 #link-dots {
-    position: absolute;
-    top: 55%;
-    left: 41%;
-    width: 100%;
+    position: relative;
+    top: 50%;
+    width: 30%;
+    margin-left: 35%;
     text-align: center;
     float: center;
+    padding: 1px;
 }
 
 #title {
-    font-family: Arial, Helvetica, sans-serif;
     font-size: 1.5rem;
-    font-style: oblique;
     text-transform: uppercase;
     text-shadow: 2px 2px rgba(0, 0, 0, 1.0);
     padding: 0;
@@ -60,13 +57,14 @@ body {
 }
 
 #link-0 {
-    color: rgba(128, 128, 128, 1.0);
+    color: white;
     text-shadow: 2px 2px rgba(0, 0, 0, 1.0);
     z-index: 999;
 }
 
 #link-dot-0 {
-    color: rgba(66, 66, 66, 1.0);
+    z-index: 9999;
+    color: rgba(9, 36, 46, 1.0);
 }
 
 #content-box {
@@ -105,7 +103,6 @@ canvas {
 }
 
 #overlay {
-    font-family: Arial, Helvetica, sans-serif;
     position: absolute;
     left: 0;
     top: 0;
@@ -119,6 +116,11 @@ canvas {
 @media (max-width: 850px) {
     .link {
         font-size: 3.5rem;
+    }
+
+    #link-dots {
+        width: 50%;
+        margin-left: 25%;
     }
 }
 
@@ -149,5 +151,10 @@ canvas {
 
     #title {
         font-size: 1rem;
+    }
+
+    #link-dots {
+        width: 80%;
+        margin-left: 10%;
     }
 }

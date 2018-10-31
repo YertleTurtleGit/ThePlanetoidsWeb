@@ -15,7 +15,7 @@ var postShaderProgram;
 function init() {
     printDebug('DEBUG MODE IS ON');
     printDebug('initializing canvas...');
-    gl = GlContext.getContext('surface');
+    gl = GlContext.getContext(CANVAS_ID);
     fitCanvasInWindow();
     let shaderCompiler = new GlShaderCompiler(gl);
     vaoExt = (
@@ -105,6 +105,8 @@ var camRelRotZ = 0;
 
 var animationDuration = 0;
 
+var linearAnimation = 0;
+
 function render(now) {
 
     now *= 1.001; //convert to seconds
@@ -121,11 +123,13 @@ function render(now) {
         animationDuration = 0;
     } else if (animationDuration > 0) {
         animationDuration -= deltaTime;
-        rotate += ROTATION_FACTOR * deltaTime * animationDuration * 0.0025;
+        rotate += ROTATION_FACTOR * deltaTime * animationDuration;
     } else if (animationDuration < 0) {
         animationDuration += deltaTime;
-        rotate -= ROTATION_FACTOR * deltaTime * animationDuration * 0.0025;
+        rotate -= ROTATION_FACTOR * deltaTime * animationDuration;
     }
+
+    linearAnimation += deltaTime;
 
     rotateCameraAbsolut(camRelRotX, camRelRotY, camRelRotZ);
     requestAnimationFrame(render);
@@ -154,7 +158,7 @@ function renderGeometry() {
 
         inputColorUniform.setValue(vec4MODEL_COLORS[i]);
 
-        gl.drawElements(gl.TRIANGLE_STRIP, VERTICES_COUNT_OF_SPHERE + 416, gl.UNSIGNED_SHORT, 0); //1440
+        gl.drawElements(gl.TRIANGLE_STRIP, VERTICES_COUNT_OF_SPHERE, gl.UNSIGNED_SHORT, 0);
     }
 
     vaoExt.bindVertexArrayOES(null);
@@ -162,23 +166,13 @@ function renderGeometry() {
 
 var rand = 0.5;
 var randCount = 0;
-var randCountMax = 500;
+var randCountMax = 250;
 
 function renderFrame() {
     gl.useProgram(postShaderProgram);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    //var rand = (Math.sin(rotate * 0.005)) * 0.3;
-
-    if (randCount < randCountMax) {
-        rand += randCount / 375;
-    } else if (randCount < randCountMax * 2) {
-        rand -= randCount / 725;
-    } else if (randCount >= randCountMax * 2) {
-        randCount = 0;
-        rand = Math.random();
-    }
-    randCount += 1;
+    rand = linearAnimation*0.01;
 
     frameRandUniform.setValue(rand);
     frameBufferTextureSamplerUniform.setValue(0);
@@ -480,14 +474,14 @@ function changeMenuItem(newIndex, oldIndex) {
         var newDiv = document.getElementById('link-' + newIndex);
         var newDot = document.getElementById('link-dot-' + newIndex);
 
-        oldDiv.style.color = 'rgba(128, 128, 128, 0.0)';
+        oldDiv.style.color = 'rgba(255, 255, 255, 0.0)';
         oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
-        oldDot.style.color = 'rgba(128, 128, 128, 1.0)';
+        oldDot.style.color = 'rgba(255, 255, 255, 1.0)';
         oldDiv.style.zIndex = -1;
         newDiv.style.zIndex = 999;
-        newDiv.style.color = 'rgba(128, 128, 128, 1.0)';
+        newDiv.style.color = 'rgba(255, 255, 255, 1.0)';
         newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
-        newDot.style.color = 'rgba(66, 66, 66, 1.0)';
+        newDot.style.color = 'rgba(9, 36, 46, 1.0)';
         lastMenuItemChanged = now;
     } else {
         contentBoxIndex = oldIndex;
