@@ -1,6 +1,10 @@
+@font-face {
+    font-family: Norwester;
+    src: url(norwester.otf)
+}
+
 body {
-    font-family: 'Norwester', Arial, Helvetica, sans-serif;
-    src: url(norwester.otf);
+    font-family: Norwester, Arial, Helvetica, sans-serif;
     border: 0;
     background-color: black;
     color: white;
