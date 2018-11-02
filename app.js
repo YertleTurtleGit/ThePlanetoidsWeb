@@ -16,7 +16,6 @@ function init() {
     printDebug('DEBUG MODE IS ON');
     printDebug('initializing canvas...');
     gl = GlContext.getContext(CANVAS_ID);
-    fitCanvasInWindow();
     let shaderCompiler = new GlShaderCompiler(gl);
     vaoExt = (
         gl.getExtension('OES_vertex_array_object') ||
@@ -27,6 +26,7 @@ function init() {
 
     mainShaderProgram = shaderCompiler.compileShaderPair(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
     postShaderProgram = shaderCompiler.compileShaderPair(VERTEX_SHADER_POST_PROCESSING_SOURCE, FRAGMENT_SHADER_POST_PROCESSING_SOURCE);
+    fitCanvasInWindow();
     run();
 };
 
@@ -105,8 +105,6 @@ var camRelRotZ = 0;
 
 var animationDuration = 0;
 
-var linearAnimation = 0;
-
 function render(now) {
 
     now *= 1.001; //convert to seconds
@@ -129,9 +127,7 @@ function render(now) {
         rotate -= ROTATION_FACTOR * deltaTime * animationDuration;
     }
 
-    linearAnimation += deltaTime;
-
-    rotateCameraAbsolut(camRelRotX, camRelRotY, camRelRotZ);
+    rotateCameraAbsolute(camRelRotX, camRelRotY, camRelRotZ);
     requestAnimationFrame(render);
 }
 
@@ -172,7 +168,11 @@ function renderFrame() {
     gl.useProgram(postShaderProgram);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    rand = linearAnimation*0.01;
+    rand += deltaTime * 0.01;
+
+    if (rand >= Math.PI * 2) {
+        rand = 0;
+    }
 
     frameRandUniform.setValue(rand);
     frameBufferTextureSamplerUniform.setValue(0);
@@ -237,8 +237,8 @@ function toRadians(angleDegree) {
 
 function vec3add(vec3a, vec3b) {
     return [vec3a[0] + vec3b[0],
-        vec3a[1] + vec3b[1],
-        vec3a[2] + vec3b[2]
+    vec3a[1] + vec3b[1],
+    vec3a[2] + vec3b[2]
     ];
 }
 
@@ -376,7 +376,7 @@ function drawPlanets() {
 let cameraMat = new Mat4();
 var fieldOfViewRadians = toRadians(60);
 
-function rotateCameraAbsolut(rotX, rotY, rotZ) {
+function rotateCameraAbsolute(rotX, rotY, rotZ) {
     cameraMat.set(getCameraInitMatRot());
     cameraMat.multiply(getCameraInitMatTrans());
     cameraMat.xRotate(toRadians(rotX));
@@ -424,7 +424,7 @@ function swipedetect(el, callback) {
         allowedTime = 300, // maximum time allowed to travel that distance
         elapsedTime,
         startTime,
-        handleswipe = callback || function (swipedir) {}
+        handleswipe = callback || function (swipedir) { }
 
     touchsurface.addEventListener('touchstart', function (e) {
         var touchobj = e.changedTouches[0]

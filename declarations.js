@@ -219,6 +219,6 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE = [
     'float relativeDistanceToCenter = distance(uv, center);',
     'fragColor = mix(fragColor, black, relativeDistanceToCenter+0.25);',
 
-    'gl_FragColor = mix(fragColor, mixColor, 0.15);',
+    'gl_FragColor = mix(fragColor, mixColor, 0.05);',
     '}'
 ].join('\n');
