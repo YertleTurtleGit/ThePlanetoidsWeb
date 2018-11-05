@@ -83,7 +83,7 @@ function run() {
     ppFrameBuffer.prepareFrame();
 
     printDebug('setting up Camera...');
-    setUpCamera();
+    camera = new Camera(60);
 
     printDebug('initializing mouse-handlers...');
     initMouseMoveHandler();
@@ -94,13 +94,14 @@ function run() {
 };
 
 var rotate = 0;
-var cameraRotate = 0;
 var then = 0;
 var deltaTime = 0;
 
 var camRelRotX = 0;
 var camRelRotY = 0;
 var camRelRotZ = 0;
+
+var camera;
 
 var animationDuration = 0;
 
@@ -126,7 +127,7 @@ function render(now) {
         rotate -= ROTATION_FACTOR * deltaTime * animationDuration;
     }
 
-    rotateCameraAbsolute(camRelRotX, camRelRotY, camRelRotZ);
+    camera.rotateCameraAbsolute(camRelRotX, camRelRotY, camRelRotZ);
     requestAnimationFrame(render);
 }
 
@@ -199,22 +200,17 @@ function calcModel(index) {
 }
 
 function calcView() {
-    cameraMat.inverse();
-    return cameraMat.get();
+    return camera.getMat().inverse();
 }
 
 function calcViewProjection(view, projection) {
     return Mat4.multiply(projection, view);
 }
 
-function calcLookAt() {
-    return Mat4.lookAt(vec3cameraPosition, vec3SUN_POSITION, vec3cameraUp);
-}
-
 function calcProjection() {
     var zNear = 0.01;
     var zFar = 1000;
-    return Mat4.perspective(fieldOfViewRadians, aspect, zNear, zFar);
+    return Mat4.perspective(camera.getFieldOfViewRadian(), aspect, zNear, zFar);
 }
 
 function calcModelView(model, view) {
@@ -228,10 +224,6 @@ function calcModelViewProjection(modelView, projection) {
 function calcNormal(modelView) {
     let tmpMat4ModelView = new Mat4(modelView);
     return tmpMat4ModelView.inverseTranspose();
-}
-
-function toRadians(angleDegree) {
-    return angleDegree * (Math.PI / 180);
 }
 
 function vec3add(vec3a, vec3b) {
@@ -271,44 +263,6 @@ function fitCanvasInWindow() {
 
 function drawPlanets() {
     new Sphere(gl, vaoExt, vao, OBJECT_SCALE);
-}
-
-let cameraMat = new Mat4();
-var fieldOfViewRadians = toRadians(60);
-
-function rotateCameraAbsolute(rotX, rotY, rotZ) {
-    cameraMat.set(getCameraInitMatRot());
-    cameraMat.multiply(getCameraInitMatTrans());
-    cameraMat.xRotate(toRadians(rotX));
-    cameraMat.yRotate(toRadians(rotY));
-    cameraMat.zRotate(toRadians(rotZ));
-}
-
-function setUpCamera() {
-    cameraMat.set(getCameraInitMatRot());
-    cameraMat.multiply(getCameraInitMatTrans());
-}
-
-function getCameraInitMatRot() {
-    let newCameraMat = new Mat4();
-
-    if (CANVAS_WIDTH > CANVAS_HEIGHT) {
-        newCameraMat.zRotate(toRadians(-20));
-    } else {
-        newCameraMat.zRotate(toRadians(65));
-    }
-    return newCameraMat.get();
-}
-
-function getCameraInitMatTrans() {
-    let newCameraMat = new Mat4();
-
-    if (CANVAS_WIDTH > CANVAS_HEIGHT) {
-        newCameraMat.translate(0.0, 0.0, 6.0);
-    } else {
-        newCameraMat.translate(0.0, 0.0, 7.0);
-    }
-    return newCameraMat.get();
 }
 
 function swipedetect(el, callback) {

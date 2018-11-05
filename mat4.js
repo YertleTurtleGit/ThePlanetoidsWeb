@@ -1,5 +1,6 @@
 'use strict';
 
+/* Depends on class cMath */
 class Mat4 {
 
     constructor(mat4) {
@@ -65,7 +66,7 @@ class Mat4 {
 
     rotateAround(pivot, rotate, rotationFactor, origin, scale) {
         this.translate(pivot[0], pivot[1], pivot[2]);
-        this.yRotate(toRadians(rotate * rotationFactor));
+        this.yRotate(cMath.toRadians(rotate * rotationFactor));
         this.translate(-pivot[0], -pivot[1], -pivot[2]);
         this.translate(origin[0], origin[1], origin[2]);
         this.scale(scale, scale, scale);

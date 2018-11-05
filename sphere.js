@@ -1,4 +1,4 @@
-PI_2 = Math.PI / 2;
+'use strict';
 
 class Sphere {
 
@@ -10,6 +10,7 @@ class Sphere {
         this.currentSphereColor = [];
         this.rings = 16;
         this.sectors = 16;
+        this.PI_2 = Math.PI / 2;
 
         this.gl = gl;
         this.vaoExt = vaoExt;
@@ -77,7 +78,7 @@ class Sphere {
 
         for (var r = 0; r < this.rings; ++r) {
             for (var s = 0; s < this.sectors; ++s) {
-                var y = Math.sin(-PI_2 + Math.PI * r * R);
+                var y = Math.sin(-this.PI_2 + Math.PI * r * R);
                 var x = Math.cos(2 * Math.PI * s * S) * Math.sin(Math.PI * r * R);
                 var z = Math.sin(2 * Math.PI * s * S) * Math.sin(Math.PI * r * R);
 
