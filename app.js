@@ -31,7 +31,6 @@ function init() {
 };
 
 var vao;
-var ibo;
 
 var modelViewUniform;
 var normalUniform;
@@ -270,107 +269,8 @@ function fitCanvasInWindow() {
     animationDuration += 1;
 }
 
-var indices = [];
-var vertices = [];
-var normals = [];
-var texcoords = [];
-var currentSphereColor = [];
-
-var rings = 16;
-var sectors = 16;
-var PI_2 = Math.PI / 2;
-
-function pushIndices(index, sectors, r, s) {
-    index *= 6;
-    var curRow = r * sectors;
-    var nextRow = (r + 1) * sectors;
-    var nextS = (s + 1) % sectors;
-
-    indices[index] = curRow + s;
-    indices[index + 1] = nextRow + s;
-    indices[index + 2] = nextRow + nextS;
-
-    indices[index + 3] = curRow + s;
-    indices[index + 4] = nextRow + nextS;
-    indices[index + 5] = curRow + nextS;
-}
-
-function createSphere(radius) {
-
-    var R = 1 / parseFloat(rings - 1);
-    var S = 1 / parseFloat(sectors - 1);
-
-    var index = 0;
-    var uvIndex = 0;
-    var indiceIndex = 0;
-
-    for (var r = 0; r < rings; ++r) {
-        for (var s = 0; s < sectors; ++s) {
-            var y = Math.sin(-PI_2 + Math.PI * r * R);
-            var x = Math.cos(2 * Math.PI * s * S) * Math.sin(Math.PI * r * R);
-            var z = Math.sin(2 * Math.PI * s * S) * Math.sin(Math.PI * r * R);
-
-            texcoords[uvIndex] = s * S;
-            texcoords[uvIndex + 1] = r * R;
-
-            vertices[index] = x * radius;
-            vertices[index + 1] = y * radius;
-            vertices[index + 2] = z * radius;
-
-            normals[index] = x;
-            normals[index + 1] = y;
-            normals[index + 2] = z;
-
-            if (r < rings - 1) {
-                pushIndices(indiceIndex, sectors, r, s);
-            }
-
-            indiceIndex++;
-            index += 3;
-            uvIndex += 2;
-        }
-    }
-}
-
-var verticiesVBO;
-var normalVBO;
-var colorVBO;
-
-function drawSphere(radius) {
-
-    createSphere(radius);
-    vaoExt.bindVertexArrayOES(vao);
-
-    ibo = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-    var vbo = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(inputPositionLocation, 3, gl.FLOAT, gl.FALSE, 3 * FLOAT_SIZE, 0);
-    gl.enableVertexAttribArray(inputPositionLocation);
-    gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-    var vboN = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vboN);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(inputNormalLocation, 3, gl.FLOAT, gl.FALSE, 3 * FLOAT_SIZE, 0);
-    gl.enableVertexAttribArray(inputNormalLocation);
-    gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-    /*var vboT = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vboT);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texcoords), gl.STATIC_DRAW);
-    gl.vertexAttribUniform(inputTextureLocation, 2, gl.FLOAT, gl.FALSE, 2 * FLOAT_SIZE, 0);
-    gl.enableVertexAttribArray(inputTextureLocation);
-	gl.bindBuffer(gl.ARRAY_BUFFER, null);*/
-
-    vaoExt.bindVertexArrayOES(null);
-}
-
 function drawPlanets() {
-    drawSphere(OBJECT_SCALE);
+    new Sphere(gl, vaoExt, vao, OBJECT_SCALE);
 }
 
 let cameraMat = new Mat4();
