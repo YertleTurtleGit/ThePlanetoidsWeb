@@ -3,6 +3,10 @@
     src: url(norwester.otf)
 }
 
+a {
+    outline: 0;
+}
+
 body {
     font-family: Norwester, Arial, Helvetica, sans-serif;
     border: 0;
@@ -15,17 +19,19 @@ body {
     text-transform: uppercase;
     color: transparent;
     text-shadow: 2px 2px rgba(0, 0, 0, 0.0);
-    height: 100px;
     padding: 0px;
     margin: 0px;
-    position: absolute;
-    top: 47%;
-    left: 0;
     text-align: center;
-    width: 100%;
     transition: all 0.7s;
     z-index: -1;
     text-decoration: none;
+    position: fixed;
+    height: 5rem;
+    width: 30rem;
+    top: 50%;
+    left: 50%;
+    margin-left: -15rem;
+    margin-top: -2.5rem;
 }
 
 .link-dot {
@@ -35,16 +41,21 @@ body {
     transition: all 1s;
     width: 16.6%;
     float: left;
+    cursor: pointer;
 }
 
 #link-dots {
-    position: relative;
+    position: fixed;
     top: 50%;
-    width: 30%;
-    margin-left: 35%;
+    left: 50%;
+    width: 16rem;
+    height: 2rem;
+    margin-left: -8rem;
+    margin-top: 1rem;
     text-align: center;
     float: center;
     padding: 1px;
+    transition: all 0.7s;
 }
 
 #title {
@@ -74,8 +85,8 @@ body {
 #content-box {
     position: absolute;
     top: 0%;
-    left: 25%;
-    width: 50%;
+    left: 0%;
+    width: 100%;
     height: 100%;
     transition: all 1s;
     margin: 0px;
@@ -121,10 +132,9 @@ canvas {
     .link {
         font-size: 3.5rem;
     }
-
     #link-dots {
-        width: 50%;
-        margin-left: 25%;
+        width: 14rem;
+        margin-left: -7rem;
     }
 }
 
@@ -133,11 +143,9 @@ canvas {
         left: 0%;
         width: 100%;
     }
-
     .link {
         font-size: 3rem;
     }
-
     #title {
         font-size: 1.25rem;
     }
@@ -148,17 +156,14 @@ canvas {
         left: 0%;
         width: 100%;
     }
-
     .link {
         font-size: 2.5rem;
     }
-
     #title {
         font-size: 1rem;
     }
-
     #link-dots {
-        width: 80%;
-        margin-left: 10%;
+        width: 10rem;
+        margin-left: -5rem;
     }
 }

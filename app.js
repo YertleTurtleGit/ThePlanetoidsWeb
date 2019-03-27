@@ -107,7 +107,7 @@ var animationDuration = 0;
 
 function render(now) {
 
-    now *= 1.001; //convert to seconds
+    now *= 1.001;
     deltaTime = now - then;
     then = now;
 
@@ -116,7 +116,7 @@ function render(now) {
     ppFrameBuffer.drawToBuffer(false);
     renderFrame();
 
-    if (5 >= animationDuration && animationDuration >= -5) {
+    if (ROTATION_OFFSET >= animationDuration && animationDuration >= -ROTATION_OFFSET) {
         rotate += (Math.sin(now * 0.01) * 0.025) * deltaTime;
         animationDuration = 0;
     } else if (animationDuration > 0) {
@@ -316,11 +316,14 @@ function rotatePlanets(rotationValue) {
 }
 
 var lastMenuItemChanged = 0;
+var lastChangedMenuItemIndex = 0;
 var contentBoxIndex = 0;
 
-function changeMenuItem(newIndex, oldIndex) {
+function changeMenuItem(newIndex) {
     var itemChangeThreshhold = 150;
     var now = new Date().getTime();
+
+    var oldIndex = lastChangedMenuItemIndex;
 
     if (lastMenuItemChanged + itemChangeThreshhold < now) {
         var oldDiv = document.getElementById('link-' + oldIndex);
@@ -337,6 +340,14 @@ function changeMenuItem(newIndex, oldIndex) {
         newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
         newDot.style.color = 'rgba(9, 36, 46, 1.0)';
         lastMenuItemChanged = now;
+        lastChangedMenuItemIndex = newIndex;
+        contentBoxIndex = newIndex;
+
+        if (newIndex - oldIndex < 0) {
+            rotatePlanets(-ROTATION_VALUE);
+        } else if (newIndex - oldIndex > 0) {
+            rotatePlanets(ROTATION_VALUE);
+        }
     } else {
         contentBoxIndex = oldIndex;
     }
@@ -348,7 +359,6 @@ function initMouseMoveHandler() {
     const maxIndex = 5;
 
     swipedetect(allDiv, function (swipedir) {
-        var oldIndex = contentBoxIndex;
         if (swipedir == 'up' || swipedir == 'left') {
             if (contentBoxIndex < maxIndex) {
                 contentBoxIndex++;
@@ -363,8 +373,7 @@ function initMouseMoveHandler() {
             }
         }
         var newIndex = contentBoxIndex;
-        rotatePlanets(750);
-        changeMenuItem(newIndex, oldIndex);
+        changeMenuItem(newIndex);
     })
 
     allDiv.onmousemove = function (ev) {
@@ -376,7 +385,6 @@ function initMouseMoveHandler() {
     }
 
     allDiv.onwheel = function (ev) {
-        var oldIndex = contentBoxIndex;
         if (ev.deltaY < 0) {
             if (contentBoxIndex > 0) {
                 contentBoxIndex--;
@@ -392,8 +400,7 @@ function initMouseMoveHandler() {
             }
         }
         var newIndex = contentBoxIndex;
-        rotatePlanets(750);
-        changeMenuItem(newIndex, oldIndex);
+        changeMenuItem(newIndex);
     }
 }
 

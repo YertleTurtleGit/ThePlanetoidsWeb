@@ -12,6 +12,9 @@ const INDICE_COUNT_OF_SPHERE = 32 * 32 * 6;
 const FLOAT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 const USHORT_SIZE = Float32Array.BYTES_PER_ELEMENT;
 
+const ROTATION_VALUE = 823; //use a prime number
+const ROTATION_OFFSET = 25;
+
 var OBJECT_SCALE = 1.5;
 //const SPACE_SCALE = 1.0;
 const ROTATION_FACTOR = 0.0004;
