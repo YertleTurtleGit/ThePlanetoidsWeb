@@ -41,11 +41,11 @@ const PLANETX_SPEED = 1.2;
 const MOON_SPEED = 2.0;
 
 const vec4SUN_COLOR = [0.815, 0.18, 0.153, 1.0];
-const vec4EARTH_COLOR = [0.1, 0.1, 0.1, 1.0];
-const vec4PLANETX_COLOR = [0.09, 0.09, 0.09, 1.0];
-const vec4MOON_COLOR = [0.1, 0.1, 0.1, 1.0];
+const vec4EARTH_COLOR = [0.2, 0.2, 0.4, 1.0];
+const vec4PLANETX_COLOR = [0.4, 0.4, 0.2, 1.0];
+const vec4MOON_COLOR = [0.2, 0.4, 0.3, 1.0];
 
-const BACKGROUND_COLOR = [0.115, 0.2, 0.2, 1.0];
+const BACKGROUND_COLOR = [0.28, 0.45, 0.45, 1.0];
 
 const CAMERA_MOVEMENT_FACTOR = -3.0;
 
@@ -217,12 +217,14 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE = [
     'mixColor = grey;',
     '}',*/
 
-    'mixColor = vec4(sin(uv.y * 250.0 - rand) *0.5 +0.15);',
+    'mixColor = vec4(sin(uv.y * 250.0 - rand) *0.4 +0.15);',
 
     'float relativeDistanceToCenter = distance(uv, center);',
     'fragColor = mix(fragColor, black, relativeDistanceToCenter+0.25);',
+    
+    'float brightness = (fragColor.r + fragColor.g + fragColor.b) / 3.0;',
 
-    'gl_FragColor = mix(fragColor, mixColor, 0.05);',
+    'gl_FragColor = mix(fragColor, mixColor, 0.05) + (brightness*0.05);',
     '}'
 ].join('\n');
 
