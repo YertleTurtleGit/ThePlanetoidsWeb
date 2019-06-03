@@ -168,6 +168,7 @@ function renderFrame() {
     gl.useProgram(postShaderProgram);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+
     rand += deltaTime * 0.01;
 
     if (rand >= Math.PI * 2) {
@@ -332,13 +333,11 @@ function changeMenuItem(newIndex) {
         var newDot = document.getElementById('link-dot-' + newIndex);
 
         oldDiv.style.color = 'rgba(255, 255, 255, 0.0)';
-        oldDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 0.0)';
         oldDot.style.color = 'rgba(255, 255, 255, 1.0)';
         oldDiv.style.zIndex = -1;
         newDiv.style.zIndex = 999;
         newDiv.style.color = 'rgba(255, 255, 255, 1.0)';
-        newDiv.style.textShadow = '2px 2px rgba(0, 0, 0, 1.0)';
-        newDot.style.color = 'rgba(9, 36, 46, 1.0)';
+        newDot.style.color = 'darkgrey';
         lastMenuItemChanged = now;
         lastChangedMenuItemIndex = newIndex;
         contentBoxIndex = newIndex;
@@ -379,8 +378,8 @@ function initMouseMoveHandler() {
     allDiv.onmousemove = function (ev) {
         var x = ev.clientX / CANVAS_WIDTH;
         var y = ev.clientY / CANVAS_HEIGHT;
-        camRelRotX = (y - 1.0) * (-2);
-        camRelRotY = (x - 1.0) * (-2);
+        camRelRotX = (y - 1.0) * MOUSE_MOVE_CAMERA_SHIFT_FACTOR;
+        camRelRotY = (x - 1.0) * MOUSE_MOVE_CAMERA_SHIFT_FACTOR;
         camRelRotZ = 0.0;
     }
 

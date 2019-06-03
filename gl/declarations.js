@@ -48,6 +48,7 @@ const vec4MOON_COLOR = [0.2, 0.4, 0.3, 1.0];
 const BACKGROUND_COLOR = [0.28, 0.45, 0.45, 1.0];
 
 const CAMERA_MOVEMENT_FACTOR = -3.0;
+const MOUSE_MOVE_CAMERA_SHIFT_FACTOR = -3.0;
 
 const vec3MODEL_POSITIONS = [vec3SUN_POSITION,
     vec3EARTH_POSITION,
@@ -211,12 +212,6 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE = [
     'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
     'fragColor += sum;',
 
-    /*'if(sin(uv.y * 400.0 - rand) > 0.0) {',
-    'mixColor = white;',
-    '} else {',
-    'mixColor = grey;',
-    '}',*/
-
     'mixColor = vec4(sin(uv.y * 250.0 - rand) *0.4 +0.15);',
 
     'float relativeDistanceToCenter = distance(uv, center);',
@@ -224,7 +219,7 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE = [
     
     'float brightness = (fragColor.r + fragColor.g + fragColor.b) / 3.0;',
 
-    'gl_FragColor = mix(fragColor, mixColor, 0.05) + (brightness*0.05);',
+    'gl_FragColor = mix(fragColor, mixColor, 0.03) + (brightness*0.05);',
     '}'
 ].join('\n');
 
