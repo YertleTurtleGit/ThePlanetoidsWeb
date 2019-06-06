@@ -132,36 +132,36 @@ canvas {
     z-index: 9999;
 }
 
-@media (max-width: 850px) {
+@media (max-width: 950px) {
     .link {
-        font-size: 3.5rem;
+        font-size: 7rem;
     }
     #link-dots {
         width: 14rem;
+        margin-top: 2rem;
         margin-left: -7rem;
     }
 }
 
-@media (max-width: 500px) {
+@media (max-width: 600px) {
     #content-box {
         left: 0%;
         width: 100%;
     }
     .link {
-        font-size: 3rem;
+        font-size: 5rem;
+    }
+    #link-dots {
+        margin-top: -0.5rem;
     }
     #title {
         font-size: 1.25rem;
     }
 }
 
-@media (max-width: 350px) {
-    #content-box {
-        left: 0%;
-        width: 100%;
-    }
+@media (max-width: 450px) {
     .link {
-        font-size: 2.5rem;
+        font-size: 3.5rem;
     }
     #title {
         font-size: 1rem;
@@ -169,5 +169,24 @@ canvas {
     #link-dots {
         width: 10rem;
         margin-left: -5rem;
+        margin-top: -2rem;
+    }
+    .link-dot {
+        font-size: 4rem;
+    }
+}
+
+@media (max-width: 300px) {
+    .link {
+        font-size: 2.7rem;
+    }
+    #title {
+        font-size: 0.9rem;
+    }
+    #link-dots {
+        margin-top: -2.5rem;
+    }
+    .link-dot {
+        font-size: 3rem;
     }
 }
