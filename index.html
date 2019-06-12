@@ -10,47 +10,63 @@
 <body onresize='resized();' onload='init();' style='background-color: rgba(29, 51, 51, 1.0);'>
     <div id='all'>
         <div id='overlay'>
+            <!---
             <div id='title'>
                 <h1 style='font-size: 90%; margin-bottom:
                 -5px;'>The</h1>
                 <h1 style='margin-top: 0'>Planetoids</h1>
             </div>
+            --->
             <div id='content-box'>
+
                 <h1>
                     <div class='link-embed'>
-                        <a class='link' id='link-0'
+                        <a onclick='changeMenuItem(0);' class='link' id='link-0'>
+                            <div id='title'>
+                                <img src='comet.png'
+                                id='title-comet'>
+                                <div id='title-text'>
+                                <h1 id='title-text-the'>The</h1>
+                                <h1 style='margin-top:
+                                0'>Planetoids</h1>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class='link-embed'>
+                        <a class='link' id='link-1'
                             href='https://www.youtube.com/channel/UC0WUVCfmgBRQ9cxMRDVcfIg/videos' target='_blank'
                             rel='noopener noreferrer'>Youtube</a>
                     </div>
                     <div class='link-embed'>
-                        <a class='link' id='link-1' href='https://www.facebook.com/theplanetoids/' target='_blank'
+                        <a class='link' id='link-2' href='https://www.facebook.com/theplanetoids/' target='_blank'
                             rel='noopener noreferrer'>Facebook</a>
                     </div>
                     <div class='link-embed'>
-                        <a class='link' id='link-2' href='https://open.spotify.com/artist/01lK8t2cYqYfRherW82aHm'
+                        <a class='link' id='link-3' href='https://open.spotify.com/artist/01lK8t2cYqYfRherW82aHm'
                             target='_blank' rel='noopener noreferrer'>Spotify</a>
                     </div>
                     <div class='link-embed'>
-                        <a class='link' id='link-3' href='https://theplanetoids.bandcamp.com/releases' target='_blank'
+                        <a class='link' id='link-4' href='https://theplanetoids.bandcamp.com/releases' target='_blank'
                             rel='noopener noreferrer'>Buy
                             Music</a>
                     </div>
                     <div class='link-embed'>
-                        <a class='link' id='link-4' href='https://www.instagram.com/the_planetoids/' target='_blank'
+                        <a class='link' id='link-5' href='https://www.instagram.com/the_planetoids/' target='_blank'
                             rel='noopener noreferrer'>Instagram</a>
                     </div>
                     <div class='link-embed'>
-                        <a class='link' id='link-5' href='mailto:info@the-planetoids.com'>Contact Us</a>
+                        <a class='link' id='link-6' href='mailto:info@the-planetoids.com'>Contact Us</a>
                     </div>
                 </h1>
 
                 <div id='link-dots'>
-                    <div class='link-dot' id='link-dot-0' onclick='changeMenuItem(0)'>•</div>
                     <div class='link-dot' id='link-dot-1' onclick='changeMenuItem(1)'>•</div>
                     <div class='link-dot' id='link-dot-2' onclick='changeMenuItem(2)'>•</div>
                     <div class='link-dot' id='link-dot-3' onclick='changeMenuItem(3)'>•</div>
                     <div class='link-dot' id='link-dot-4' onclick='changeMenuItem(4)'>•</div>
                     <div class='link-dot' id='link-dot-5' onclick='changeMenuItem(5)'>•</div>
+                    <div class='link-dot' id='link-dot-6' onclick='changeMenuItem(6)'>•</div>
                 </div>
             </div>
         </div>

@@ -91,6 +91,8 @@ function run() {
     render(0);
 
     printDebug('INITIALIZING FINISHED!');
+
+    rotatePlanets(1100); //behind the sun
 };
 
 var rotate = 0;
@@ -169,9 +171,9 @@ function renderFrame() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 
-    rand += deltaTime * 0.01;
+    rand += deltaTime * 0.004;
 
-    if (rand >= Math.PI * 2) {
+    if (rand >= Math.PI * 100) {
         rand = 0;
     }
 
@@ -320,32 +322,58 @@ var lastMenuItemChanged = 0;
 var lastChangedMenuItemIndex = 0;
 var contentBoxIndex = 0;
 
+const minIndex = 1;
+const maxIndex = 6;
+
 function changeMenuItem(newIndex) {
     var itemChangeThreshhold = 150;
     var now = new Date().getTime();
 
+    if (newIndex == 0 || contentBoxIndex == 0) {
+        newIndex = minIndex;
+    }
+
     var oldIndex = lastChangedMenuItemIndex;
+    var extraRotationValue = 0;
 
     if (lastMenuItemChanged + itemChangeThreshhold < now) {
+
+        if (oldIndex != 0) {
+            var oldDot = document.getElementById('link-dot-' + oldIndex);
+            oldDot.style.color = 'rgba(255, 255, 255, 1.0)';
+
+        } else {
+            var linkTitle = document.getElementById('link-0');
+            var cometTitle = document.getElementById('title-comet');
+            var linkDots = document.getElementsByClassName('link-dot');
+
+            linkTitle.style.opacity = '0';
+            cometTitle.style.transform = 'translate(100vh, 100vh) rotate(42deg)';
+
+            for (var i = 0; i < linkDots.length; i++) {
+                var linkDot = linkDots[i];
+                linkDot.style.color = 'rgba(255, 255, 255, 1.0)';
+            }
+            extraRotationValue = 100;
+        }
+
         var oldDiv = document.getElementById('link-' + oldIndex);
-        var oldDot = document.getElementById('link-dot-' + oldIndex);
         var newDiv = document.getElementById('link-' + newIndex);
         var newDot = document.getElementById('link-dot-' + newIndex);
-
         oldDiv.style.color = 'rgba(255, 255, 255, 0.0)';
-        oldDot.style.color = 'rgba(255, 255, 255, 1.0)';
         oldDiv.style.zIndex = -1;
         newDiv.style.zIndex = 999;
         newDiv.style.color = 'rgba(255, 255, 255, 1.0)';
         newDot.style.color = 'darkgrey';
+
         lastMenuItemChanged = now;
         lastChangedMenuItemIndex = newIndex;
         contentBoxIndex = newIndex;
 
         if (newIndex - oldIndex < 0) {
-            rotatePlanets(-ROTATION_VALUE);
+            rotatePlanets(-(ROTATION_VALUE + extraRotationValue));
         } else if (newIndex - oldIndex > 0) {
-            rotatePlanets(ROTATION_VALUE);
+            rotatePlanets(ROTATION_VALUE + extraRotationValue);
         }
     } else {
         contentBoxIndex = oldIndex;
@@ -355,19 +383,18 @@ function changeMenuItem(newIndex) {
 function initMouseMoveHandler() {
 
     var allDiv = document.getElementById('all');
-    const maxIndex = 5;
 
     swipedetect(allDiv, function (swipedir) {
         if (swipedir == 'up' || swipedir == 'left') {
             if (contentBoxIndex < maxIndex) {
                 contentBoxIndex++;
             } else if (contentBoxIndex == maxIndex) {
-                contentBoxIndex = 0;
+                contentBoxIndex = minIndex;
             }
         } else if (swipedir == 'down' || swipedir == 'right') {
-            if (contentBoxIndex > 0) {
+            if (contentBoxIndex > minIndex) {
                 contentBoxIndex--;
-            } else if (contentBoxIndex == 0) {
+            } else if (contentBoxIndex == minIndex) {
                 contentBoxIndex = maxIndex;
             }
         }
@@ -385,9 +412,9 @@ function initMouseMoveHandler() {
 
     allDiv.onwheel = function (ev) {
         if (ev.deltaY < 0) {
-            if (contentBoxIndex > 0) {
+            if (contentBoxIndex > minIndex) {
                 contentBoxIndex--;
-            } else if (contentBoxIndex == 0) {
+            } else if (contentBoxIndex == minIndex) {
                 contentBoxIndex = maxIndex;
             }
         }
@@ -395,7 +422,7 @@ function initMouseMoveHandler() {
             if (contentBoxIndex < maxIndex) {
                 contentBoxIndex++;
             } else if (contentBoxIndex == maxIndex) {
-                contentBoxIndex = 0;
+                contentBoxIndex = minIndex;
             }
         }
         var newIndex = contentBoxIndex;

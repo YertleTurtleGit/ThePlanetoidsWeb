@@ -1,6 +1,6 @@
 'use strict';
 
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 const DIRTY_SCALING_FACTOR = 2; //1 means no scaling
 
@@ -40,12 +40,12 @@ const EARTH_SPEED = 1.0;
 const PLANETX_SPEED = 1.2;
 const MOON_SPEED = 2.0;
 
-const vec4SUN_COLOR = [0.815, 0.18, 0.153, 1.0];
+const vec4SUN_COLOR = [0.715, 0.08, 0.053, 1.0];
 const vec4EARTH_COLOR = [0.2, 0.2, 0.4, 1.0];
 const vec4PLANETX_COLOR = [0.4, 0.4, 0.2, 1.0];
 const vec4MOON_COLOR = [0.2, 0.4, 0.3, 1.0];
 
-const BACKGROUND_COLOR = [0.28, 0.45, 0.45, 1.0];
+const BACKGROUND_COLOR = [0.18, 0.35, 0.35, 1.0];
 
 const CAMERA_MOVEMENT_FACTOR = -3.0;
 const MOUSE_MOVE_CAMERA_SHIFT_FACTOR = -3.0;
@@ -212,14 +212,21 @@ const FRAGMENT_SHADER_POST_PROCESSING_SOURCE = [
     'sum += texture2D(frameBufferTextureSampler, blurCoords[4]) * 0.093913;',
     'fragColor += sum;',
 
-    'mixColor = vec4(sin(uv.y * 250.0 - rand) *0.4 +0.15);',
 
     'float relativeDistanceToCenter = distance(uv, center);',
     'fragColor = mix(fragColor, black, relativeDistanceToCenter+0.25);',
     
+    'if(sin(relativeDistanceToCenter * 25.0 -rand*0.5) *0.4 +0.15 > 0.25) {',
+    'mixColor = vec4(1.0 * (relativeDistanceToCenter*2.0-0.25));',
+    '} else {',
+    'mixColor = vec4(0.0);',
+    '}',
+
+    'mixColor += vec4(sin(uv.y * 250.0 - rand) *0.2 +0.15);',
+    
     'float brightness = (fragColor.r + fragColor.g + fragColor.b) / 3.0;',
 
-    'gl_FragColor = mix(fragColor, mixColor, 0.03) + (brightness*0.05);',
+    'gl_FragColor = mix(fragColor, mixColor, 0.03) - (brightness*0.25);',
     '}'
 ].join('\n');
 
