@@ -93,6 +93,17 @@ function run() {
     printDebug('INITIALIZING FINISHED!');
 
     rotatePlanets(1100); //behind the sun
+
+    var titleTextElem = document.getElementById('title-text');
+    titleTextElem.style.paddingTop = '11vw';
+    let cometImage = new Image();
+    cometImage.onload = function () {
+        var cometImageElem = document.getElementById('title-comet');
+        cometImageElem.src = cometImage.src;
+        titleTextElem.style.paddingTop = '0';
+    };
+    cometImage.src = 'comet.png';
+
 };
 
 var rotate = 0;
