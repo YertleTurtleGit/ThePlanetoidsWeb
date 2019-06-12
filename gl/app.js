@@ -92,7 +92,7 @@ function run() {
 
     printDebug('INITIALIZING FINISHED!');
 
-    rotatePlanets(1100); //behind the sun
+    rotatePlanets(1125); //behind the sun
 
     var titleTextElem = document.getElementById('title-text');
     titleTextElem.style.paddingTop = '11vw';
