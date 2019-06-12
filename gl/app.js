@@ -19,13 +19,11 @@ function init() {
     var titleTextElem = document.getElementById('title-text');
     var cometImageElem = document.getElementById('title-comet');
 
-    titleTextElem.style.paddingTop = '11vw';
-    let cometImage = new Image();
+    let cometImage = new Image(2069, 713);
 
     cometImage.onload = function () {
         printDebug('comet.png loaded!')
         cometImageElem.src = cometImage.src;
-        titleTextElem.style.paddingTop = 0;
         cometImageElem.style.opacity = 1;
         cometImageElem.style.transform = 'translate(0vh, 0vh) rotate(42deg)';
     };
