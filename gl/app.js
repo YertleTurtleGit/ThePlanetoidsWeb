@@ -14,6 +14,23 @@ var postShaderProgram;
 
 function init() {
     printDebug('DEBUG MODE IS ON');
+
+    printDebug('loading images...')
+    var titleTextElem = document.getElementById('title-text');
+    var cometImageElem = document.getElementById('title-comet');
+
+    titleTextElem.style.paddingTop = '11vw';
+    let cometImage = new Image();
+
+    cometImage.onload = function () {
+        printDebug('comet.png loaded!')
+        cometImageElem.src = cometImage.src;
+        titleTextElem.style.paddingTop = 0;
+        cometImageElem.style.opacity = 1;
+        cometImageElem.style.transform = 'translate(0vh, 0vh) rotate(42deg)';
+    };
+    cometImage.src = 'comet.png';
+
     printDebug('initializing canvas...');
     gl = GlContext.getContext(CANVAS_ID);
     let shaderCompiler = new GlShaderCompiler(gl);
@@ -93,16 +110,6 @@ function run() {
     printDebug('INITIALIZING FINISHED!');
 
     rotatePlanets(1125); //behind the sun
-
-    var titleTextElem = document.getElementById('title-text');
-    titleTextElem.style.paddingTop = '11vw';
-    let cometImage = new Image();
-    cometImage.onload = function () {
-        var cometImageElem = document.getElementById('title-comet');
-        cometImageElem.src = cometImage.src;
-        titleTextElem.style.paddingTop = '0';
-    };
-    cometImage.src = 'comet.png';
 
 };
 

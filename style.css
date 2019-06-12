@@ -91,7 +91,8 @@ body {
 
 #title-comet {
     width: 90%;
-    transform: rotateZ(42deg);
+    transform: translate(-100vh, -100vh) rotateZ(42deg);
+    opacity: 0.01;
     z-index: -1;
     transition: all 2s;
 }
