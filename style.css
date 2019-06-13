@@ -12,6 +12,10 @@ body {
     border: 0;
 }
 
+#surface {
+    z-index: 0;
+}
+
 #logo {
     top: 50%;
     height: 50vh;
@@ -25,7 +29,6 @@ body {
     margin: 0px;
     text-align: center;
     transition: all 0.7s;
-    z-index: -1;
     text-decoration: none;
     position: fixed;
     height: 5rem;
@@ -81,6 +84,8 @@ body {
 
 #title-text {
     margin-top: -35%;
+    z-index: 2;
+    position: relative;
 }
 
 #title-text-the {
@@ -93,13 +98,13 @@ body {
     width: 90%;
     transform: translate(-100vh, -100vh) rotateZ(42deg);
     opacity: 0.01;
-    z-index: -1;
-    transition: all 2s;
+    transition: all 1.5s;
+    z-index: 1;
+    position: relative;
 }
 
 #link-0 {
     color: white;
-    z-index: 999;
 }
 
 #content-box {
@@ -122,12 +127,10 @@ canvas {
     width: 50%;
     height: 50%;
     display: block;
-    z-index: 1;
 }
 
 #content {
     display: none;
-    z-index: 2;
     position: absolute;
     top: 10%;
     left: 5%;
@@ -138,6 +141,7 @@ canvas {
 }
 
 #overlay {
+    z-index: 9999;
     position: absolute;
     left: 0;
     top: 0;
@@ -145,7 +149,6 @@ canvas {
     vertical-align: middle;
     height: 100%;
     width: 100%;
-    z-index: 9999;
 }
 
 @media (max-width: 950px) {
