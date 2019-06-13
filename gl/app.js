@@ -106,7 +106,7 @@ function run() {
 
     printDebug('INITIALIZING FINISHED!');
 
-    rotatePlanets(1125); //behind the sun
+    //rotatePlanets(1125); //behind the sun
 
 };
 
