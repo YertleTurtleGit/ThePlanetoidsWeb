@@ -23,6 +23,7 @@ function init() {
     cometImage.onload = function () {
         printDebug('comet.png loaded!');
         cometImageElem.style.opacity = 1;
+        cometImageElem.style.transitionDelay = '0s';
         cometImageElem.style.transform = 'translate(0vh, 0vh) rotate(42deg)';
     };
     cometImage.src = 'comet.png';
