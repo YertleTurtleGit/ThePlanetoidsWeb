@@ -15,20 +15,6 @@ var postShaderProgram;
 function init() {
     printDebug('DEBUG MODE IS ON');
 
-    printDebug('loading images...');
-    var cometImageElem = document.getElementById('title-comet');
-
-    let cometImage = new Image(2069, 713);
-
-    cometImage.onload = function () {
-        printDebug('comet.png loaded!');
-        cometImageElem.style.opacity = 1;
-        cometImageElem.style.transitionDelay = '0s';
-        cometImageElem.style.transform = 'translate(0vh, 0vh) rotate(42deg)';
-    };
-    cometImage.src = 'comet.png';
-    cometImageElem.src = cometImage.src;
-
     printDebug('initializing canvas...');
     gl = GlContext.getContext(CANVAS_ID);
     let shaderCompiler = new GlShaderCompiler(gl);
@@ -43,6 +29,19 @@ function init() {
     postShaderProgram = shaderCompiler.compileShaderPair(VERTEX_SHADER_POST_PROCESSING_SOURCE, FRAGMENT_SHADER_POST_PROCESSING_SOURCE);
     fitCanvasInWindow();
     run();
+
+    printDebug('loading images...');
+    var cometImageElem = document.getElementById('title-comet');
+
+    let cometImage = new Image(2069, 713);
+
+    cometImage.onload = function () {
+        printDebug('comet.png loaded!');
+        cometImageElem.style.opacity = 1;
+        cometImageElem.style.transform = 'translate(0vh, 0vh) rotate(42deg)';
+    };
+    cometImage.src = 'comet.png';
+    cometImageElem.src = cometImage.src;
 };
 
 var vao;
