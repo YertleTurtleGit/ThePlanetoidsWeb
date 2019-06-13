@@ -15,14 +15,13 @@ var postShaderProgram;
 function init() {
     printDebug('DEBUG MODE IS ON');
 
-    printDebug('loading images...')
-    var titleTextElem = document.getElementById('title-text');
+    printDebug('loading images...');
     var cometImageElem = document.getElementById('title-comet');
 
     let cometImage = new Image(2069, 713);
 
     cometImage.onload = function () {
-        printDebug('comet.png loaded!')
+        printDebug('comet.png loaded!');
         cometImageElem.src = cometImage.src;
         cometImageElem.style.opacity = 1;
         cometImageElem.style.transform = 'translate(0vh, 0vh) rotate(42deg)';
@@ -380,7 +379,7 @@ function changeMenuItem(newIndex) {
         oldDiv.style.zIndex = -1;
         newDiv.style.zIndex = 999;
         newDiv.style.color = 'rgba(255, 255, 255, 1.0)';
-        newDot.style.color = 'darkgrey';
+        newDot.style.color = 'black';
 
         lastMenuItemChanged = now;
         lastChangedMenuItemIndex = newIndex;
