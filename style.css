@@ -204,11 +204,12 @@ canvas {
 @media (max-width: 450px) {
     .link {
         font-size: 3.5rem;
+        margin-top: -2.7rem;
     }
     #link-dots {
         width: 10rem;
         margin-left: -5rem;
-        margin-top: -2.5rem;
+        margin-top: -0.5rem;
     }
     .link-dot {
         font-size: 4rem;
@@ -230,7 +231,7 @@ canvas {
         font-size: 2.7rem;
     }
     #link-dots {
-        margin-top: -3rem;
+        margin-top: -0.5rem;
     }
     .link-dot {
         font-size: 3rem;
