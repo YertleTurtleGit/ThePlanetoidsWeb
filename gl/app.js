@@ -48,7 +48,7 @@ var vao;
 
 var modelViewUniform;
 var normalUniform;
-var modelviewProjectionUniform;
+var modelViewProjectionUniform;
 
 var frameRandUniform;
 
@@ -71,7 +71,7 @@ function run() {
 
     modelViewUniform = new GlUniform(gl, mainShaderProgram, 'modelview', GlUniform.MAT_4());
     normalUniform = new GlUniform(gl, mainShaderProgram, 'normalMat', GlUniform.MAT_4());
-    modelviewProjectionUniform = new GlUniform(gl, mainShaderProgram, 'modelviewProjection', GlUniform.MAT_4());
+    modelViewProjectionUniform = new GlUniform(gl, mainShaderProgram, 'modelviewProjection', GlUniform.MAT_4());
     inputColorUniform = new GlUniform(gl, mainShaderProgram, 'inputColor', GlUniform.VEC_4());
 
     inputPositionLocation = gl.getAttribLocation(mainShaderProgram, 'inputPosition');
@@ -167,7 +167,7 @@ function renderGeometry() {
 
         modelViewUniform.setValue(mat4modelview);
         normalUniform.setValue(mat4normal);
-        modelviewProjectionUniform.setValue(mat4modelviewProjection);
+        modelViewProjectionUniform.setValue(mat4modelviewProjection);
 
         inputColorUniform.setValue(vec4MODEL_COLORS[i]);
 

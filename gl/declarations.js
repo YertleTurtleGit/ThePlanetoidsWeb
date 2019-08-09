@@ -1,6 +1,6 @@
 'use strict';
 
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 const DIRTY_SCALING_FACTOR = 2; //1 means no scaling
 
