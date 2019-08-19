@@ -283,6 +283,31 @@ function drawPlanets() {
     new Sphere(gl, vaoExt, vao, OBJECT_SCALE);
 }
 
+function keyDown(keyDownEvent) {
+    keyDownEvent = keyDownEvent || window.event;
+
+    var keyCode = keyDownEvent.keyCode;
+
+    printDebug('KEY PRESS!');
+
+    if (keyCode == '38') {
+        // up arrow
+        prevMenuItem();
+    }
+    else if (keyCode == '40') {
+        // down arrow
+        nextMenuItem();
+    }
+    else if (keyCode == '37') {
+        // left arrow
+        prevMenuItem();
+    }
+    else if (keyCode == '39') {
+        // right arrow
+        nextMenuItem();
+    }
+}
+
 function swipedetect(el, callback) {
 
     var touchsurface = el,
@@ -340,8 +365,26 @@ var contentBoxIndex = 0;
 const minIndex = 1;
 const maxIndex = 6;
 
+function prevMenuItem() {
+    if (contentBoxIndex > minIndex) {
+        contentBoxIndex--;
+    } else if (contentBoxIndex == minIndex) {
+        contentBoxIndex = maxIndex;
+    }
+    changeMenuItem(contentBoxIndex);
+}
+
+function nextMenuItem() {
+    if (contentBoxIndex < maxIndex) {
+        contentBoxIndex++;
+    } else if (contentBoxIndex == maxIndex) {
+        contentBoxIndex = minIndex;
+    }
+    changeMenuItem(contentBoxIndex);
+}
+
 function changeMenuItem(newIndex) {
-    var itemChangeThreshhold = 150;
+    var itemChangeThreshold = 150;
     var now = new Date().getTime();
 
     if (newIndex == 0 || contentBoxIndex == 0) {
@@ -351,7 +394,7 @@ function changeMenuItem(newIndex) {
     var oldIndex = lastChangedMenuItemIndex;
     var extraRotationValue = 0;
 
-    if (lastMenuItemChanged + itemChangeThreshhold < now) {
+    if (lastMenuItemChanged + itemChangeThreshold < now) {
 
         if (oldIndex != 0) {
             var oldDot = document.getElementById('link-dot-' + oldIndex);
@@ -401,20 +444,10 @@ function initMouseMoveHandler() {
 
     swipedetect(allDiv, function (swipedir) {
         if (swipedir == 'up' || swipedir == 'left') {
-            if (contentBoxIndex < maxIndex) {
-                contentBoxIndex++;
-            } else if (contentBoxIndex == maxIndex) {
-                contentBoxIndex = minIndex;
-            }
+            prevMenuItem();
         } else if (swipedir == 'down' || swipedir == 'right') {
-            if (contentBoxIndex > minIndex) {
-                contentBoxIndex--;
-            } else if (contentBoxIndex == minIndex) {
-                contentBoxIndex = maxIndex;
-            }
+            nextMenuItem();
         }
-        var newIndex = contentBoxIndex;
-        changeMenuItem(newIndex);
     })
 
     allDiv.onmousemove = function (ev) {
@@ -427,21 +460,11 @@ function initMouseMoveHandler() {
 
     allDiv.onwheel = function (ev) {
         if (ev.deltaY < 0) {
-            if (contentBoxIndex > minIndex) {
-                contentBoxIndex--;
-            } else if (contentBoxIndex == minIndex) {
-                contentBoxIndex = maxIndex;
-            }
+            prevMenuItem();
         }
         if (ev.deltaY > 0) {
-            if (contentBoxIndex < maxIndex) {
-                contentBoxIndex++;
-            } else if (contentBoxIndex == maxIndex) {
-                contentBoxIndex = minIndex;
-            }
+            nextMenuItem();
         }
-        var newIndex = contentBoxIndex;
-        changeMenuItem(newIndex);
     }
 }
 
